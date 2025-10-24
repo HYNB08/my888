@@ -1,0 +1,3339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英语练习小程序</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E88E5',
+                        secondary: '#64B5F6',
+                        accent: '#0D47A1',
+                        light: '#E3F2FD',
+                        dark: '#0D47A1',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 2s infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .card-shadow {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .btn-primary {
+                @apply bg-primary hover:bg-accent text-white font-bold py-3 px-6 rounded-full transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50;
+            }
+            .btn-secondary {
+                @apply bg-white hover:bg-gray-100 text-primary font-bold py-3 px-6 rounded-full border border-primary transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50;
+            }
+            .input-primary {
+                @apply bg-white border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+            }
+            .card {
+                @apply bg-white rounded-xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen font-sans">
+    <!-- App Container -->
+    <div id="app" class="max-w-md mx-auto mx-auto bg-white shadow-xl rounded-2xl overflow-hidden relative">
+        <!-- Navigation Bar -->
+        <nav class="bg-primary text-white p-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <i class="fa fa-book text-2xl mr-2"></i>
+                <h1 class="text-xl font-bold">英语大师</h1>
+            </div>
+            <div class="flex items-center">
+                <i class="fa fa-search text-xl mr-4"></i>
+                <i class="fa fa-user-circle text-xl cursor-pointer" onclick="showScreen('profile-screen')" id="user-icon"></i>
+                <button id="login-btn" class="ml-4 bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm hover:bg-opacity-30 transition-all" onclick="showScreen('login-screen')">
+                    登录
+                </button>
+                <button id="logout-btn" class="ml-4 bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm hover:bg-opacity-30 transition-all hidden" onclick="logout()">
+                    退出
+                </button>
+            </div>
+        </nav>
+
+        <!-- Screens Container -->
+        <div class="screens">
+            <!-- Login Screen -->
+            <div id="login-screen" class="screen hidden p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="showScreen('home-screen')" class="text-primary">
+                        <i class="fa fa-arrow-left mr-1"></i> 返回
+                    </button>
+                    <h2 class="text-xl font-bold">用户登录</h2>
+                    <div class="w-6"></div> <!-- Placeholder for alignment -->
+                </div>
+
+                <!-- Login Form -->
+                <div class="bg-white rounded-xl p-6 shadow-md mb-6">
+                    <div class="text-center mb-6">
+                        <div class="w-20 h-20 bg-primary rounded-full mx-auto mb-4 flex items-center justify-center">
+                            <i class="fa fa-user text-white text-3xl"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-800">欢迎回来</h3>
+                        <p class="text-gray-500 text-sm">请登录您的账户</p>
+                    </div>
+
+                    <form id="login-form" class="space-y-4">
+                        <div>
+                            <label for="username" class="block text-sm font-medium text-gray-700 mb-1">用户名/邮箱/手机号</label>
+                            <input type="text" id="username" name="username" class="input-primary w-full" placeholder="请输入用户名、邮箱或手机号" required>
+                        </div>
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                            <div class="relative">
+                                <input type="password" id="password" name="password" class="input-primary w-full pr-10" placeholder="请输入密码" required>
+                                <button type="button" onclick="togglePassword()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                    <i class="fa fa-eye" id="password-toggle-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="remember-me" class="rounded border-gray-300 text-primary focus:ring-primary">
+                                <span class="ml-2 text-sm text-gray-600">记住我</span>
+                            </label>
+                            <a href="#" class="text-sm text-primary hover:text-accent">忘记密码？</a>
+                        </div>
+
+                        <button type="submit" class="btn-primary w-full">
+                            <i class="fa fa-sign-in mr-2"></i>登录
+                        </button>
+                    </form>
+
+                    <div class="mt-6 text-center">
+                        <p class="text-gray-500 text-sm">还没有账户？</p>
+                        <button onclick="showScreen('register-screen')" class="text-primary hover:text-accent font-medium">
+                            立即注册
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Social Login -->
+                <div class="bg-white rounded-xl p-6 shadow-md">
+                    <h3 class="text-lg font-medium mb-4 text-center">其他登录方式</h3>
+                    <div class="space-y-3">
+                        <button class="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg flex items-center justify-center transition-colors">
+                            <i class="fa fa-wechat text-xl mr-3"></i>
+                            微信登录
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Register Screen -->
+            <div id="register-screen" class="screen hidden p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="showScreen('login-screen')" class="text-primary">
+                        <i class="fa fa-arrow-left mr-1"></i> 返回
+                    </button>
+                    <h2 class="text-xl font-bold">用户注册</h2>
+                    <div class="w-6"></div> <!-- Placeholder for alignment -->
+                </div>
+
+                <!-- Register Form -->
+                <div class="bg-white rounded-xl p-6 shadow-md mb-6">
+                    <div class="text-center mb-6">
+                        <div class="w-20 h-20 bg-green-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+                            <i class="fa fa-user-plus text-white text-3xl"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-800">创建新账户</h3>
+                        <p class="text-gray-500 text-sm">开始您的英语学习之旅</p>
+                    </div>
+
+                    <form id="register-form" class="space-y-4">
+                        <div>
+                            <label for="reg-username" class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                            <input type="text" id="reg-username" name="username" class="input-primary w-full" placeholder="请输入用户名" required>
+                        </div>
+                        <div>
+                            <label for="reg-email" class="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
+                            <input type="email" id="reg-email" name="email" class="input-primary w-full" placeholder="请输入邮箱地址" required>
+                        </div>
+                        <div>
+                            <label for="reg-phone" class="block text-sm font-medium text-gray-700 mb-1">手机号</label>
+                            <input type="tel" id="reg-phone" name="phone" class="input-primary w-full" placeholder="请输入手机号" required>
+                        </div>
+                        <div>
+                            <label for="reg-password" class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                            <div class="relative">
+                                <input type="password" id="reg-password" name="password" class="input-primary w-full pr-10" placeholder="请输入密码" required>
+                                <button type="button" onclick="toggleRegisterPassword()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                    <i class="fa fa-eye" id="reg-password-toggle-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-1">确认密码</label>
+                            <input type="password" id="confirm-password" name="confirmPassword" class="input-primary w-full" placeholder="请再次输入密码" required>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <input type="checkbox" id="agree-terms" class="rounded border-gray-300 text-primary focus:ring-primary" required>
+                            <label for="agree-terms" class="ml-2 text-sm text-gray-600">
+                                我已阅读并同意 <a href="#" class="text-primary hover:text-accent">用户协议</a> 和 <a href="#" class="text-primary hover:text-accent">隐私政策</a>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn-primary w-full">
+                            <i class="fa fa-user-plus mr-2"></i>注册
+                        </button>
+                    </form>
+
+                    <div class="mt-6 text-center">
+                        <p class="text-gray-500 text-sm">已有账户？</p>
+                        <button onclick="showScreen('login-screen')" class="text-primary hover:text-accent font-medium">
+                            立即登录
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Home Screen -->
+            <div id="home-screen" class="screen active p-6">
+                <!-- Progress Card -->
+                <div class="bg-primary text-white rounded-xl p-6 mb-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-blue-400 rounded-full opacity-20 -mr-16 -mt-16"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-blue-400 rounded-full opacity-20 -ml-12 -mb-12"></div>
+                    <h2 class="text-xl font-bold mb-2 relative z-10">本周进度</h2>
+                    <div class="flex items-end relative z-10">
+                        <span class="text-5xl font-bold">75%</span>
+                        <span class="ml-2 mb-1">已完成</span>
+                    </div>
+                    <div class="w-full bg-blue-300 rounded-full h-2.5 mt-4 relative z-10">
+                        <div class="bg-white h-2.5 rounded-full" style="width: 75%"></div>
+                    </div>
+                </div>
+
+                <!-- Quick Access Buttons -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <button onclick="showScreen('listening-screen')" class="bg-white rounded-xl p-4 flex flex-col items-center justify-center shadow-md hover:shadow-lg transition-shadow">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                            <i class="fa fa-headphones text-primary text-xl"></i>
+                        </div>
+                        <span class="font-medium">听力</span>
+                    </button>
+                    <button onclick="showScreen('reading-screen')" class="bg-white rounded-xl p-4 flex flex-col items-center justify-center shadow-md hover:shadow-lg transition-shadow">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                            <i class="fa fa-book text-primary text-xl"></i>
+                        </div>
+                        <span class="font-medium">阅读</span>
+                    </button>
+                    <button onclick="showScreen('vocabulary-screen')" class="bg-white rounded-xl p-4 flex flex flex-col items-center justify-center shadow-md hover:shadow-lg transition-shadow">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                            <i class="fa fa-list-alt text-primary text-xl"></i>
+                        </div>
+                        <span class="font-medium">词汇</span>
+                    </button>
+                    <button onclick="showScreen('profile-screen')" class="bg-white rounded-xl p-4 flex flex-col items-center justify-center shadow-md hover:shadow-lg transition-shadow">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                            <i class="fa fa-user text-primary text-xl"></i>
+                        </div>
+                        <span class="font-medium">我的</span>
+                    </button>
+                </div>
+
+                <!-- Daily Goals -->
+                <div class="bg-white rounded-xl p-6 shadow-md mb-6">
+                    <h2 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fa fa-calendar-check-o text-primary mr-2"></i>
+                        每日目标
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm">听力练习</span>
+                                <span class="text-sm font-medium">15/20 分钟</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full" style="width: 75%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm">阅读练习</span>
+                                <span class="text-sm font-medium">10/15 分钟</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-500 h-2 rounded-full" style="width: 66%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm">词汇学习</span>
+                                <span class="text-sm font-medium">8/10 个单词</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-yellow-500 h-2 rounded-full" style="width: 80%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recommended Lessons -->
+                <div class="bg-white rounded-xl p-6 shadow-md">
+                    <h2 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fa fa-star text-primary mr-2"></i>
+                        推荐课程
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="flex items-center p-3 border border-gray-100 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fa fa-headphones text-primary"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-medium">日常对话</h3>
+                                <p class="text-sm text-gray-500">中级 • 10分钟</p>
+                            </div>
+                            <i class="fa fa-chevron-right text-gray-400"></i>
+                        </div>
+                        <div class="flex items-center p-3 border border-gray-100 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fa fa-book text-primary"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-medium">新闻文章：科技</h3>
+                                <p class="text-sm text-gray-500">高级 • 15分钟</p>
+                            </div>
+                            <i class="fa fa-chevron-right text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Listening Practice Screen -->
+            <div id="listening-screen" class="screen hidden p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="showScreen('home-screen')" class="text-primary">
+                        <i class="fa fa-arrow-left mr-1"></i> 返回
+                    </button>
+                    <h2 class="text-xl font-bold">单词听写</h2>
+                    <div class="w-6"></div> <!-- Placeholder for alignment -->
+                </div>
+
+                <!-- Unit Selection -->
+                <div class="bg-white rounded-xl p-6 shadow-md mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center">
+                            <i class="fa fa-bookmark text-primary mr-2"></i>
+                            <span class="text-sm text-gray-500">当前单元：</span>
+                            <span id="listening-current-unit" class="font-medium text-primary ml-1">U1</span>
+                        </div>
+                        <button onclick="toggleUnitSelection('listening')" class="btn-secondary text-sm px-4 py-2">
+                            <i class="fa fa-edit mr-1"></i>选择单元
+                        </button>
+                    </div>
+                    
+                    <!-- Unit Selection Grid (Initially Hidden) -->
+                    <div id="listening-unit-selection" class="hidden">
+                        <h3 class="text-lg font-medium mb-4">选择学习单元</h3>
+                        <div class="grid grid-cols-4 gap-3">
+                            <button onclick="selectUnit('listening', 'U1')" class="unit-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U1">
+                                U1
+                            </button>
+                            <button onclick="selectUnit('listening', 'U2')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U2">
+                                U2
+                            </button>
+                            <button onclick="selectUnit('listening', 'U3')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U3">
+                                U3
+                            </button>
+                            <button onclick="selectUnit('listening', 'U4')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U4">
+                                U4
+                            </button>
+                            <button onclick="selectUnit('listening', 'U5')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U5">
+                                U5
+                            </button>
+                            <button onclick="selectUnit('listening', 'U6')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U6">
+                                U6
+                            </button>
+                            <button onclick="selectUnit('listening', 'U7')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U7">
+                                U7
+                            </button>
+                            <button onclick="selectUnit('listening', 'U8')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U8">
+                                U8
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 shadow-md mb-6">
+                    <h3 class="text-lg font-medium mb-4">请听单词并填写英文和中文</h3>
+                    
+                    <!-- Word Counter -->
+                    <div class="flex justify-between items-center mb-6">
+                        <span class="text-sm text-gray-500">单词 <span id="current-word">1</span>/<span id="total-words">10</span></span>
+                        <span class="text-sm text-gray-500">得分: <span id="score">0</span></span>
+                    </div>
+
+                    <!-- Audio Player -->
+                    <div class="mb-8">
+                        <div class="flex justify-center mb-6">
+                            <button id="play-word" class="w-16 h-16 bg-primary rounded-full-full flex items-center justify-center text-white shadow-lg hover:bg-accent transition-colors">
+                                <i class="fa fa-volume-up text-2xl"></i>
+                            </button>
+                        </div>
+                        <div class="text-center text-gray-500 text-sm mb-2">点击上方按钮播放单词</div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 mb-1">
+                            <div class="bg-primary h-2 rounded-full" style="width: 0%" id="audio-progress"></div>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-400">
+                            <span>0:00</span>
+                            <span id="audio-duration">0:00</span>
+                        </div>
+                    </div>
+
+                    <!-- Input Fields -->
+                    <div class="space-y-4 mb-6">
+                        <div>
+                            <label for="english-input" class="block text-sm font-medium text-gray-700 mb-1">英文拼写写</label>
+                            <input type="text" id="english-input" class="input-primary w-full" placeholder="请输入听到的英文单词">
+                        </div>
+                        <div>
+                            <label for="chinese-input" class="block text-sm font-medium text-gray-700 mb-1">中文翻译</label>
+                            <input type="text" id="chinese-input" class="input-primary w-full" placeholder="请输入中文翻译">
+                        </div>
+                    </div>
+
+                    <!-- Feedback -->
+                    <div class="mb-6 hidden" id="feedback-container">
+                        <div class="p-4 bg-green-50 rounded-lg border border-green-200 mb-4">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0">
+                                    <i class="fa fa-check-circle text-green-500 text-xl"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="font-medium text-green-700">正确！</p>
+                                    <p class="text-gray-700 mt-1">
+                                        <span class="font-medium">正确答案：</span>
+                                        <span id="correct-english" class="font-medium"></span> - 
+                                        <span id="correct-chinese"></span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex space-x-3">
+                        <button id="check-answer" class="btn-primary flex-1">
+                            检查答案
+                        </button>
+                        <button id="next-word" class="btn-secondary flex-1 hidden">
+                            下一个单词
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Exercise History -->
+                <div class="bg-white rounded-xl p-6 shadow-md">
+                    <h3 class="text-lg font-medium mb-4">学习进度</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span>练习 1</span>
+                            <span class="text-green-500"><i class="fa fa-check-circle"></i> 已完成</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>练习 2</span>
+                            <span class="text-green-500"><i class="fa fa-check-circle"></i> 已完成</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>练习 3</span>
+                            <span class="text-gray-400"><i class="fa fa-circle-o"></i> 未开始</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reading Practice Screen -->
+            <div id="reading-screen" class="screen hidden p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="showScreen('home-screen')" class="text-primary">
+                        <i class="fa fa-arrow-left mr-1"></i> 返回
+                    </button>
+                    <h2 class="text-xl font-bold">阅读练习</h2>
+                    <div class="w-6"></div> <!-- Placeholder for alignment -->
+                </div>
+
+                <!-- Unit Selection -->
+                <div class="bg-white rounded-xl p-6 shadow-md mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center">
+                            <i class="fa fa-bookmark text-primary mr-2"></i>
+                            <span class="text-sm text-gray-500">当前单元：</span>
+                            <span id="reading-current-unit" class="font-medium text-primary ml-1">U1</span>
+                        </div>
+                        <button onclick="toggleUnitSelection('reading')" class="btn-secondary text-sm px-4 py-2">
+                            <i class="fa fa-edit mr-1"></i>选择单元
+                        </button>
+                    </div>
+                    
+                    <!-- Unit Selection Grid (Initially Hidden) -->
+                    <div id="reading-unit-selection" class="hidden">
+                        <h3 class="text-lg font-medium mb-4">选择学习单元</h3>
+                        <div class="grid grid-cols-4 gap-3">
+                            <button onclick="selectUnit('reading', 'U1')" class="unit-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U1">
+                                U1
+                            </button>
+                            <button onclick="selectUnit('reading', 'U2')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U2">
+                                U2
+                            </button>
+                            <button onclick="selectUnit('reading', 'U3')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U3">
+                                U3
+                            </button>
+                            <button onclick="selectUnit('reading', 'U4')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U4">
+                                U4
+                            </button>
+                            <button onclick="selectUnit('reading', 'U5')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U5">
+                                U5
+                            </button>
+                            <button onclick="selectUnit('reading', 'U6')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U6">
+                                U6
+                            </button>
+                            <button onclick="selectUnit('reading', 'U7')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U7">
+                                U7
+                            </button>
+                            <button onclick="selectUnit('reading', 'U8')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U8">
+                                U8
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 shadow-md mb-6">
+                    <h3 class="text-lg font-medium mb-4">选择正确的翻译</h3>
+                    
+                    <!-- Question -->
+                    <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+                        <p class="text-lg font-medium mb-2" id="reading-question">
+                            "The cat is on the mat."
+                        </p>
+                    </div>
+
+                    <!-- Options -->
+                    <div class="space-y-3 mb-6" id="reading-options">
+                        <div class="p-3 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors option" data-correct="true">
+                            猫在垫子上。
+                        </div>
+                        <div class="p-3 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors option" data-correct="false">
+                            狗在垫子上。
+                        </div>
+                        <div class="p-3 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors option" data-correct="false">
+                            垫子在猫上。
+                        </div>
+                        <div class="p-3 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors option" data-correct="false">
+                            猫在桌子上。
+                        </div>
+                    </div>
+
+                    <!-- Feedback -->
+                    <div class="mb-6 hidden" id="feedback-container">
+                        <div class="flex items-center justify-center space-x-6">
+                            <div class="flex flex-col items-center">
+                                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-2">
+                                    <i class="fa fa-check text-green-500 text-xl"></i>
+                                </div>
+                                <span class="text-green-500 font-medium">正确</span>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-2">
+                                    <i class="fa fa-times text-red-500 text-xl"></i>
+                                </div>
+                                <span class="text-red-500 font-medium">错误</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="nextReadingExercise()" class="w-full btn-primary">
+                        下一题
+                    </button>
+                </div>
+
+                <!-- Reading Stats -->
+                <div class="bg-white rounded-xl p-6 shadow-md">
+                    <h3 class="text-lg font-medium mb-4">学习表现</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-blue-50 p-4 rounded-lg text-center">
+                            <p class="text-sm text-gray-500 mb-1">今日得分</p>
+                            <p class="text-2xl font-bold text-primary">8/10</p>
+                        </div>
+                        <div class="bg-blue-50 p-4 rounded-lg text-center">
+                            <p class="text-sm text-gray-500 mb-1">正确率</p>
+                            <p class="text-2xl font-bold text-primary">80%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vocabulary Screen -->
+            <div id="vocabulary-screen" class="screen hidden p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="showScreen('home-screen')" class="text-primary">
+                        <i class="fa fa-arrow-left mr-1"></i> 返回
+                    </button>
+                    <h2 class="text-xl font-bold">词汇练习</h2>
+                    <div class="w-6"></div> <!-- Placeholder for alignment -->
+                </div>
+
+                <!-- Unit Selection -->
+                <div class="bg-white rounded-xl p-6 shadow-md mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center">
+                            <i class="fa fa-bookmark text-primary mr-2"></i>
+                            <span class="text-sm text-gray-500">当前单元：</span>
+                            <span id="vocabulary-current-unit" class="font-medium text-primary ml-1">U1</span>
+                        </div>
+                        <button onclick="toggleUnitSelection('vocabulary')" class="btn-secondary text-sm px-4 py-2">
+                            <i class="fa fa-edit mr-1"></i>选择单元
+                        </button>
+                    </div>
+                    
+                    <!-- Unit Selection Grid (Initially Hidden) -->
+                    <div id="vocabulary-unit-selection" class="hidden">
+                        <h3 class="text-lg font-medium mb-4">选择学习单元</h3>
+                        <div class="grid grid-cols-4 gap-3">
+                            <button onclick="selectUnit('vocabulary', 'U1')" class="unit-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U1">
+                                U1
+                            </button>
+                            <button onclick="selectUnit('vocabulary', 'U2')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U2">
+                                U2
+                            </button>
+                            <button onclick="selectUnit('vocabulary', 'U3')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U3">
+                                U3
+                            </button>
+                            <button onclick="selectUnit('vocabulary', 'U4')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U4">
+                                U4
+                            </button>
+                            <button onclick="selectUnit('vocabulary', 'U5')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U5">
+                                U5
+                            </button>
+                            <button onclick="selectUnit('vocabulary', 'U6')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U6">
+                                U6
+                            </button>
+                            <button onclick="selectUnit('vocabulary', 'U7')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U7">
+                                U7
+                            </button>
+                            <button onclick="selectUnit('vocabulary', 'U8')" class="unit-btn bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg font-medium transition-colors" data-unit="U8">
+                                U8
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 shadow-md mb-6">
+                    <h3 class="text-lg font-medium mb-4">将单词与其含义匹配</h3>
+                    
+                    <!-- Word Card -->
+                    <div class="mb-6 p-6 bg-blue-50 rounded-lg text-center">
+                        <p class="text-2xl font-bold mb-2" id="vocab-word">
+                            "Serendipity"
+                        </p>
+                        <p class="text-gray-500 mb-2">
+                            /ˌserənˈdɪpəti/
+                        </p>
+                        <button id="play-audio" class="text-primary mb-2" onclick="playVocabAudio()">
+                            <i class="fa fa-volume-up mr-1"></i> 播放发音
+                        </button>
+                    </div>
+
+                    <!-- Definition Options -->
+                    <div class="space-y-3 mb-6" id="vocab-options">
+                        <div class="p-3 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors vocab-option" data-correct="false">
+                            一种甜点
+                        </div>
+                        <div class="p-3 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors vocab-option" data-correct="true">
+                            意外发现美好事物的幸运
+                        </div>
+                        <div class="p-3 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors vocab-option" data-correct="false">
+                            一种乐器
+                        </div>
+                        <div class="p-3 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors vocab-option" data-correct="false">
+                            一种科学理论
+                        </div>
+                    </div>
+
+                    <!-- Feedback -->
+                    <div class="mb-6 hidden" id="vocab-feedback">
+                        <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                            <p class="font-medium text-green-700">正确！</p>
+                            <p class="text-gray-700 mt-2">
+                                <strong>Serendipity</strong> means the occurrence of events by chance in a happy or beneficial way.
+                            </p>
+                            <p class="text-gray-600 mt-1">
+                                意外发现美好事物的幸运
+                            </p>
+                        </div>
+                    </div>
+
+                    <button onclick="nextVocabExercise()" class="w-full btn-primary">
+                        下一个单词
+                    </button>
+                </div>
+            </div>
+
+            <!-- Profile Screen -->
+            <div id="profile-screen" class="screen hidden p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="showScreen('home-screen')" class="text-primary">
+                        <i class="fa fa-arrow-left mr-1"></i> 返回
+                    </button>
+                    <h2 class="text-xl font-bold">个人中心</h2>
+                    <div class="w-6"></div> <!-- Placeholder for alignment -->
+                </div>
+
+                <!-- User Info -->
+                <div class="bg-white rounded-xl p-6 shadow-md mb-6 text-center">
+                    <div class="w-24 h-24 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                        <i class="fa fa-user text-primary text-4xl" id="profile-avatar"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-1" id="profile-name">请先登录</h3>
+                    <p class="text-gray-500 mb-4" id="profile-level">未登录用户</p>
+                    <div class="flex justify-center space-x-4" id="profile-stats">
+                        <div>
+                            <p class="text-2xl font-bold text-primary" id="profile-words">0</p>
+                            <p class="text-sm text-gray-500">已学单词</p>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-primary" id="profile-weeks">0</p>
+                            <p class="text-sm text-gray-500">连续学习周数</p>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-primary" id="profile-minutes">0</p>
+                            <p class="text-sm text-gray-500">日均学习(分钟)</p>
+                        </div>
+                    </div>
+                    <div id="login-prompt" class="mt-4">
+                        <button onclick="showScreen('login-screen')" class="btn-primary">
+                            <i class="fa fa-sign-in mr-2"></i>立即登录
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TTS 语音设置 -->
+                <div class="bg-white rounded-xl p-6 shadow-md mb-6">
+                    <h3 class="text-lg font-medium mb-4 flex items-center">
+                        <i class="fa fa-volume-up text-primary mr-2"></i>
+                        语音设置
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">语速</label>
+                            <div class="flex items-center space-x-3">
+                                <span class="text-sm text-gray-500">慢</span>
+                                <input type="range" id="tts-rate" min="0.5" max="1.5" step="0.1" value="0.8" 
+                                       class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                <span class="text-sm text-gray-500">快</span>
+                                <span id="rate-value" class="text-sm font-medium text-primary w-8">0.8</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">音调</label>
+                            <div class="flex items-center space-x-3">
+                                <span class="text-sm text-gray-500">低</span>
+                                <input type="range" id="tts-pitch" min="0.5" max="2" step="0.1" value="1" 
+                                       class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                <span class="text-sm text-gray-500">高</span>
+                                <span id="pitch-value" class="text-sm font-medium text-primary w-8">1.0</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">音量</label>
+                            <div class="flex items-center space-x-3">
+                                <span class="text-sm text-gray-500">小</span>
+                                <input type="range" id="tts-volume" min="0.1" max="1" step="0.1" value="1" 
+                                       class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                <span class="text-sm text-gray-500">大</span>
+                                <span id="volume-value" class="text-sm font-medium text-primary w-8">1.0</span>
+                            </div>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button onclick="testTTS()" class="btn-secondary flex-1">
+                                <i class="fa fa-play mr-2"></i>测试语音
+                            </button>
+                            <button onclick="resetTTSSettings()" class="btn-secondary flex-1">
+                                <i class="fa fa-refresh mr-2"></i>重置设置
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Chart -->
+                <div class="bg-white rounded-xl p-6 shadow-md mb-6">
+                    <h3 class="text-lg font-medium mb-4">学习进度</h3>
+                    <div class="h-64">
+                        <canvas id="progress-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Learning Tools -->
+                <div class="bg-white rounded-xl p-6 shadow-md mb-6">
+                    <h3 class="text-lg font-medium mb-4">学习工具</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="showStudyHistory()" class="btn-secondary flex items-center justify-center">
+                            <i class="fa fa-history mr-2"></i>
+                            学习记录
+                        </button>
+                        <button onclick="showReviewSuggestions()" class="btn-secondary flex items-center justify-center">
+                            <i class="fa fa-refresh mr-2"></i>
+                            复习建议
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Achievement Badges -->
+                <div class="bg-white rounded-xl p-6 shadow-md">
+                    <h3 class="text-lg font-medium mb-4">成就徽章</h3>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="flex flex-col items-center">
+                            <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mb-2">
+                                <i class="fa fa-star text-yellow-500 text-2xl"></i>
+                            </div>
+                            <span class="text-sm font-medium">青铜阅读者</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-2">
+                                <i class="fa fa-lock text-gray-400 text-2xl"></i>
+                            </div>
+                            <span class="text-sm font-medium text-gray-400">白银倾听者</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-2">
+                                <i class="fa fa-lock text-gray-400 text-2xl"></i>
+                            </div>
+                            <span class="text-sm font-medium text-gray-400">黄金演说家</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bg-white border-t border-gray-200 flex justify-around items-center p-3">
+            <button onclick="showScreen('home-screen')" class="nav-btn flex flex-col items-center text-primary">
+                <i class="fa fa-home text-xl"></i>
+                <span class="text-xs mt-1">首页</span>
+            </button>
+            <button onclick="showScreen('listening-screen')" class="nav-btn flex flex-col items-center text-gray-400">
+                <i class="fa fa-headphones text-xl"></i>
+                <span class="text-xs mt-1">听力</span>
+            </button>
+            <button onclick="showScreen('reading-screen')" class="nav-btn flex flex-col items-center text-gray-400">
+                <i class="fa fa-book text-xl"></i>
+                <span class="text-xs mt-1">阅读</span>
+            </button>
+            <button onclick="showScreen('profile-screen')" class="nav-btn flex flex-col items-center text-gray-400">
+                <i class="fa fa-user text-xl"></i>
+                <span class="text-xs mt-1">我的</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ==================== TTS 文字转语音服务 ====================
+        class TTSService {
+            constructor() {
+                this.synth = window.speechSynthesis;
+                this.voices = [];
+                this.currentUtterance = null;
+                this.isPlaying = false;
+                this.isPending = false; // 添加待播放状态
+                this.lastPlayTime = 0; // 记录上次播放时间
+                this.minPlayInterval = 500; // 最小播放间隔（毫秒）
+                this.loadVoices();
+            }
+
+            // 加载可用语音
+            loadVoices() {
+                this.voices = this.synth.getVoices();
+                this.englishVoices = this.voices.filter(voice => 
+                    voice.lang.startsWith('en') && voice.name.includes('English')
+                );
+                
+                // 如果没有加载到语音，等待语音加载完成
+                if (this.englishVoices.length === 0) {
+                    this.synth.addEventListener('voiceschanged', () => {
+                        this.voices = this.synth.getVoices();
+                        this.englishVoices = this.voices.filter(voice => 
+                            voice.lang.startsWith('en') && voice.name.includes('English')
+                        );
+                    });
+                }
+            }
+
+            // 播放单词发音（带防抖和重试机制）
+            speakWord(word, options = {}) {
+                const currentTime = Date.now();
+                
+                // 检查是否在最小播放间隔内
+                if (currentTime - this.lastPlayTime < this.minPlayInterval) {
+                    console.log('TTS: 播放间隔太短，忽略请求');
+                    return null;
+                }
+                
+                // 如果正在播放或待播放，先停止
+                if (this.isPlaying || this.isPending) {
+                    this.stopSpeaking();
+                    // 等待一小段时间确保停止完成
+                    setTimeout(() => {
+                        this._executeSpeak(word, options);
+                    }, 100);
+                } else {
+                    this._executeSpeak(word, options);
+                }
+                
+                return this.currentUtterance;
+            }
+            
+            // 执行播放的内部方法
+            _executeSpeak(word, options = {}) {
+                try {
+                    this.isPending = true;
+                    this.lastPlayTime = Date.now();
+                    
+                    const utterance = new SpeechSynthesisUtterance(word);
+                    
+                    // 设置语音参数
+                    utterance.lang = 'en-US';
+                    utterance.rate = options.rate || 0.8;
+                    utterance.pitch = options.pitch || 1;
+                    utterance.volume = options.volume || 1;
+                    
+                    // 选择最佳英语语音
+                    if (this.englishVoices.length > 0) {
+                        const femaleVoice = this.englishVoices.find(voice => 
+                            voice.name.includes('Female') || voice.name.includes('Woman')
+                        );
+                        utterance.voice = femaleVoice || this.englishVoices[0];
+                    }
+                    
+                    // 设置事件监听
+                    utterance.onstart = () => {
+                        this.isPlaying = true;
+                        this.isPending = false;
+                        if (options.onStart) options.onStart();
+                    };
+                    
+                    utterance.onend = () => {
+                        this.isPlaying = false;
+                        this.isPending = false;
+                        if (options.onEnd) options.onEnd();
+                    };
+                    
+                    utterance.onerror = (event) => {
+                        this.isPlaying = false;
+                        this.isPending = false;
+                        console.error('TTS Error:', event.error);
+                        
+                        // 重试机制
+                        if (options.retryCount === undefined) {
+                            options.retryCount = 0;
+                        }
+                        
+                        if (options.retryCount < 2) {
+                            console.log(`TTS: 重试播放 (${options.retryCount + 1}/2)`);
+                            options.retryCount++;
+                            setTimeout(() => {
+                                this._executeSpeak(word, options);
+                            }, 200);
+                        } else {
+                            if (options.onError) options.onError(event.error);
+                        }
+                    };
+                    
+                    this.currentUtterance = utterance;
+                    this.synth.speak(utterance);
+                    
+                } catch (error) {
+                    this.isPending = false;
+                    console.error('TTS 执行错误:', error);
+                    if (options.onError) options.onError(error);
+                }
+            }
+
+            // 停止播放
+            stopSpeaking() {
+                this.synth.cancel();
+                this.isPlaying = false;
+                this.isPending = false;
+                this.currentUtterance = null;
+            }
+
+            // 暂停播放
+            pauseSpeaking() {
+                this.synth.pause();
+            }
+
+            // 恢复播放
+            resumeSpeaking() {
+                this.synth.resume();
+            }
+
+            // 检查是否正在播放
+            isCurrentlyPlaying() {
+                return this.isPlaying;
+            }
+
+            // 获取可用语音列表
+            getAvailableVoices() {
+                return this.englishVoices;
+            }
+
+            // 设置语音参数
+            setVoiceSettings(rate = 0.8, pitch = 1, volume = 1) {
+                this.defaultRate = rate;
+                this.defaultPitch = pitch;
+                this.defaultVolume = volume;
+            }
+        }
+
+        // 创建全局TTS服务实例
+        const ttsService = new TTSService();
+
+        // ==================== 音频状态监控 ====================
+        
+        // 全局音频状态监控
+        function monitorAudioState() {
+            // 每100毫秒检查一次音频状态
+            setInterval(() => {
+                const isPlaying = ttsService.isCurrentlyPlaying();
+                const isPending = ttsService.isPending;
+                
+                // 更新所有播放按钮的状态
+                updateAllPlayButtons(isPlaying || isPending);
+            }, 100);
+        }
+        
+        // 更新所有播放按钮状态
+        function updateAllPlayButtons(isPlaying) {
+            // 听力练习播放按钮
+            const listeningButton = document.getElementById('play-word');
+            if (listeningButton && !listeningButton.disabled) {
+                if (isPlaying) {
+                    listeningButton.innerHTML = '<i class="fa fa-volume-up text-2xl animate-pulse"></i>';
+                } else {
+                    listeningButton.innerHTML = '<i class="fa fa-volume-up text-2xl"></i>';
+                }
+            }
+            
+            // 词汇练习播放按钮
+            const vocabButton = document.getElementById('play-audio');
+            if (vocabButton && !vocabButton.disabled) {
+                if (isPlaying) {
+                    vocabButton.innerHTML = '<i class="fa fa-volume-up mr-1 animate-pulse"></i> 播放中...';
+                } else {
+                    vocabButton.innerHTML = '<i class="fa fa-volume-up mr-1"></i> 播放发音';
+                }
+            }
+        }
+        
+        // 启动音频状态监控
+        document.addEventListener('DOMContentLoaded', function() {
+            monitorAudioState();
+        });
+
+        // ==================== 练习数据 - 按单元组织 ====================
+        
+        // 听力练习数据 - 按单元组织
+        const listeningExercisesByUnit = {
+            U1: [
+                {
+                    word: "Serendipity",
+                    pronunciation: "/ˌserənˈdɪpəti/",
+                    chinese: "意外发现美好事物的幸运",
+                    audioDuration: 2
+                },
+                {
+                    word: "Ephemeral",
+                    pronunciation: "/ɪˈfemərəl/",
+                    chinese: "短暂的，瞬息即逝的",
+                    audioDuration: 1.5
+                },
+                {
+                    word: "Quintessential",
+                    pronunciation: "/ˌkwɪntɪˈsenʃəl/",
+                    chinese: "典型的，精髓的",
+                    audioDuration: 2
+                }
+            ],
+            U2: [
+                {
+                    word: "Melancholy",
+                    pronunciation: "/ˈmelənkəli/",
+                    chinese: "忧郁的，忧伤的",
+                    audioDuration: 1.8
+                },
+                {
+                    word: "Ethereal",
+                    pronunciation: "/ɪˈθɪəriəl/",
+                    chinese: "轻飘飘的，非尘世俗的",
+                    audioDuration: 1.7
+                },
+                {
+                    word: "Pernicious",
+                    pronunciation: "/pəˈnɪʃəs/",
+                    chinese: "有害的，恶性的",
+                    audioDuration: 1.6
+                }
+            ],
+            U3: [
+                {
+                    word: "Resilient",
+                    pronunciation: "/rɪˈzɪliənt/",
+                    chinese: "有弹性的，能复原的",
+                    audioDuration: 1.5
+                },
+                {
+                    word: "Ubiquitous",
+                    pronunciation: "/juːˈbɪkwɪtəs/",
+                    chinese: "无所不在的，普遍的",
+                    audioDuration: 1.9
+                },
+                {
+                    word: "Capricious",
+                    pronunciation: "/kəˈprɪʃəs/",
+                    chinese: "变化无常的，任性的",
+                    audioDuration: 1.7
+                }
+            ],
+            U4: [
+                {
+                    word: "Esoteric",
+                    pronunciation: "/ˌiːsəˈterɪk/",
+                    chinese: "秘传的，难懂的",
+                    audioDuration: 1.6
+                },
+                {
+                    word: "Magnanimous",
+                    pronunciation: "/mæɡˈnænɪməs/",
+                    chinese: "宽宏大量的，高尚的",
+                    audioDuration: 1.8
+                },
+                {
+                    word: "Perspicacious",
+                    pronunciation: "/ˌpɜːrspɪˈkeɪʃəs/",
+                    chinese: "洞察力强的，敏锐的",
+                    audioDuration: 2
+                }
+            ],
+            U5: [
+                {
+                    word: "Sagacious",
+                    pronunciation: "/səˈɡeɪʃəs/",
+                    chinese: "睿智的，明智的",
+                    audioDuration: 1.7
+                },
+                {
+                    word: "Veracious",
+                    pronunciation: "/vəˈreɪʃəs/",
+                    chinese: "诚实的，真实的",
+                    audioDuration: 1.6
+                },
+                {
+                    word: "Loquacious",
+                    pronunciation: "/loʊˈkweɪʃəs/",
+                    chinese: "健谈的，话多的",
+                    audioDuration: 1.8
+                }
+            ],
+            U6: [
+                {
+                    word: "Mellifluous",
+                    pronunciation: "/məˈlɪfluəs/",
+                    chinese: "悦耳的，甜美的",
+                    audioDuration: 1.9
+                },
+                {
+                    word: "Petulant",
+                    pronunciation: "/ˈpetʃələnt/",
+                    chinese: "任性的，脾气坏的",
+                    audioDuration: 1.5
+                },
+                {
+                    word: "Sanguine",
+                    pronunciation: "/ˈsæŋɡwɪn/",
+                    chinese: "乐观的，自信的",
+                    audioDuration: 1.6
+                }
+            ],
+            U7: [
+                {
+                    word: "Temerarious",
+                    pronunciation: "/ˌteməˈreəriəs/",
+                    chinese: "鲁莽的，大胆的",
+                    audioDuration: 1.8
+                },
+                {
+                    word: "Ubiquitous",
+                    pronunciation: "/juːˈbɪkwɪtəs/",
+                    chinese: "无所不在的",
+                    audioDuration: 1.9
+                },
+                {
+                    word: "Vivacious",
+                    pronunciation: "/vɪˈveɪʃəs/",
+                    chinese: "活泼的，有生气的",
+                    audioDuration: 1.7
+                }
+            ],
+            U8: [
+                {
+                    word: "Winsome",
+                    pronunciation: "/ˈwɪnsəm/",
+                    chinese: "迷人的，可爱的",
+                    audioDuration: 1.5
+                },
+                {
+                    word: "Xenial",
+                    pronunciation: "/ˈziːniəl/",
+                    chinese: "好客的，友善的",
+                    audioDuration: 1.6
+                },
+                {
+                    word: "Zealous",
+                    pronunciation: "/ˈzeləs/",
+                    chinese: "热心的，积极的",
+                    audioDuration: 1.4
+                }
+            ]
+        };
+
+        // 阅读练习数据 - 按单元组织
+        const readingExercisesByUnit = {
+            U1: [
+                {
+                    question: "The cat is on the mat.",
+                    options: [
+                        { text: "猫在垫子上。", correct: true },
+                        { text: "狗在垫子上。", correct: false },
+                        { text: "垫子在猫上。", correct: false },
+                        { text: "猫在桌子上。", correct: false }
+                    ]
+                },
+                {
+                    question: "She enjoys playing the piano in her free time.",
+                    options: [
+                        { text: "她喜欢在空闲时间弹钢琴。", correct: true },
+                        { text: "她喜欢在空闲时间弹吉他。", correct: false },
+                        { text: "她喜欢在工作时间弹钢琴。", correct: false },
+                        { text: "她讨厌在空闲时间弹钢琴。", correct: false }
+                    ]
+                }
+            ],
+            U2: [
+                {
+                    question: "The meeting will be held in the conference room at 2 PM.",
+                    options: [
+                        { text: "会议将于下午2点在会议室举行。", correct: true },
+                        { text: "会议将于下午2点在办公室举行。", correct: false },
+                        { text: "会议将于下午3点在会议室举行。", correct: false },
+                        { text: "会议将于上午10点在会议室举行。", correct: false }
+                    ]
+                },
+                {
+                    question: "I need to buy some groceries for dinner tonight.",
+                    options: [
+                        { text: "我需要买一些今晚晚餐的食材。", correct: true },
+                        { text: "我需要买一些明天早餐的食材。", correct: false },
+                        { text: "我需要买一些午餐的食材。", correct: false },
+                        { text: "我不需要买任何食材。", correct: false }
+                    ]
+                }
+            ],
+            U3: [
+                {
+                    question: "The weather is beautiful today, perfect for a picnic.",
+                    options: [
+                        { text: "今天天气很好，非常适合野餐。", correct: true },
+                        { text: "今天天气很糟糕，不适合野餐。", correct: false },
+                        { text: "今天天气很热，不适合野餐。", correct: false },
+                        { text: "今天天气很冷，不适合野餐。", correct: false }
+                    ]
+                },
+                {
+                    question: "She has been studying English for three years.",
+                    options: [
+                        { text: "她已经学习英语三年了。", correct: true },
+                        { text: "她学习英语已经三年了。", correct: true },
+                        { text: "她学习英语只有一年。", correct: false },
+                        { text: "她从来没有学习过英语。", correct: false }
+                    ]
+                }
+            ],
+            U4: [
+                {
+                    question: "The new restaurant serves delicious Italian food.",
+                    options: [
+                        { text: "这家新餐厅提供美味的意大利菜。", correct: true },
+                        { text: "这家新餐厅提供美味的中国菜。", correct: false },
+                        { text: "这家老餐厅提供美味的意大利菜。", correct: false },
+                        { text: "这家新餐厅提供难吃的意大利菜。", correct: false }
+                    ]
+                },
+                {
+                    question: "He decided to take a break from work and travel around the world.",
+                    options: [
+                        { text: "他决定暂停工作，环游世界。", correct: true },
+                        { text: "他决定继续工作，不去旅行。", correct: false },
+                        { text: "他决定换工作，在国内旅行。", correct: false },
+                        { text: "他决定退休，在家休息。", correct: false }
+                    ]
+                }
+            ],
+            U5: [
+                {
+                    question: "The library is open from 9 AM to 9 PM on weekdays.",
+                    options: [
+                        { text: "图书馆在工作日从上午9点到晚上9点开放。", correct: true },
+                        { text: "图书馆在周末从上午9点到晚上9点开放。", correct: false },
+                        { text: "图书馆在工作日从上午8点到晚上8点开放。", correct: false },
+                        { text: "图书馆在工作日24小时开放。", correct: false }
+                    ]
+                },
+                {
+                    question: "She is looking forward to her vacation next month.",
+                    options: [
+                        { text: "她期待着下个月的假期。", correct: true },
+                        { text: "她担心下个月的假期。", correct: false },
+                        { text: "她忘记了下个月的假期。", correct: false },
+                        { text: "她取消了下个月的假期。", correct: false }
+                    ]
+                }
+            ],
+            U6: [
+                {
+                    question: "The company announced a new policy for remote work.",
+                    options: [
+                        { text: "公司宣布了远程工作的新政策。", correct: true },
+                        { text: "公司取消了远程工作的政策。", correct: false },
+                        { text: "公司宣布了办公室工作的新政策。", correct: false },
+                        { text: "公司没有关于工作的政策。", correct: false }
+                    ]
+                },
+                {
+                    question: "He spent the entire weekend reading a fascinating novel.",
+                    options: [
+                        { text: "他整个周末都在读一本引人入胜的小说。", correct: true },
+                        { text: "他整个周末都在看电视。", correct: false },
+                        { text: "他整个周末都在玩游戏。", correct: false },
+                        { text: "他整个周末都在睡觉。", correct: false }
+                    ]
+                }
+            ],
+            U7: [
+                {
+                    question: "The museum offers free admission on the first Sunday of every month.",
+                    options: [
+                        { text: "博物馆每月第一个周日免费开放。", correct: true },
+                        { text: "博物馆每月最后一个周日免费开放。", correct: false },
+                        { text: "博物馆每周日都免费开放。", correct: false },
+                        { text: "博物馆从不免费开放。", correct: false }
+                    ]
+                },
+                {
+                    question: "She managed to finish the project ahead of schedule.",
+                    options: [
+                        { text: "她设法提前完成了项目。", correct: true },
+                        { text: "她按时完成了项目。", correct: false },
+                        { text: "她延迟完成了项目。", correct: false },
+                        { text: "她没有完成项目。", correct: false }
+                    ]
+                }
+            ],
+            U8: [
+                {
+                    question: "The new technology has revolutionized the way we communicate.",
+                    options: [
+                        { text: "新技术彻底改变了我们的交流方式。", correct: true },
+                        { text: "新技术没有改变我们的交流方式。", correct: false },
+                        { text: "旧技术改变了我们的交流方式。", correct: false },
+                        { text: "我们从不使用新技术交流。", correct: false }
+                    ]
+                },
+                {
+                    question: "He was awarded the Nobel Prize for his groundbreaking research.",
+                    options: [
+                        { text: "他因开创性研究获得了诺贝尔奖。", correct: true },
+                        { text: "他因普通研究获得了诺贝尔奖。", correct: false },
+                        { text: "他没有获得诺贝尔奖。", correct: false },
+                        { text: "他获得了其他奖项。", correct: false }
+                    ]
+                }
+            ]
+        };
+
+        // 词汇练习数据 - 按单元组织
+        const vocabularyExercisesByUnit = {
+            U1: [
+                {
+                    word: "Serendipity",
+                    pronunciation: "/ˌserənˈdɪpəti/",
+                    options: [
+                        { text: "一种甜点", correct: false },
+                        { text: "意外发现美好事物的幸运", correct: true },
+                        { text: "一种乐器", correct: false },
+                        { text: "一种科学理论", correct: false }
+                    ],
+                    definition: "the occurrence of events by chance in a happy or beneficial way",
+                    translation: "意外发现美好事物的幸运"
+                },
+                {
+                    word: "Ephemeral",
+                    pronunciation: "/ɪˈfemərəl/",
+                    options: [
+                        { text: "永恒的", correct: false },
+                        { text: "短暂的", correct: true },
+                        { text: "重要的", correct: false },
+                        { text: "微小的", correct: false }
+                    ],
+                    definition: "lasting for a very short time",
+                    translation: "短暂的，瞬息即逝的"
+                }
+            ],
+            U2: [
+                {
+                    word: "Melancholy",
+                    pronunciation: "/ˈmelənkəli/",
+                    options: [
+                        { text: "快乐的", correct: false },
+                        { text: "忧郁的", correct: true },
+                        { text: "愤怒的", correct: false },
+                        { text: "兴奋的", correct: false }
+                    ],
+                    definition: "a feeling of pensive sadness",
+                    translation: "忧郁的，忧伤的"
+                },
+                {
+                    word: "Ethereal",
+                    pronunciation: "/ɪˈθɪəriəl/",
+                    options: [
+                        { text: "沉重的", correct: false },
+                        { text: "轻飘飘的", correct: true },
+                        { text: "坚固的", correct: false },
+                        { text: "粗糙的", correct: false }
+                    ],
+                    definition: "extremely delicate and light",
+                    translation: "轻飘飘的，非尘世俗的"
+                }
+            ],
+            U3: [
+                {
+                    word: "Resilient",
+                    pronunciation: "/rɪˈzɪliənt/",
+                    options: [
+                        { text: "脆弱的", correct: false },
+                        { text: "有弹性的", correct: true },
+                        { text: "僵硬的", correct: false },
+                        { text: "柔软的", correct: false }
+                    ],
+                    definition: "able to withstand or recover quickly from difficult conditions",
+                    translation: "有弹性的，能复原的"
+                },
+                {
+                    word: "Ubiquitous",
+                    pronunciation: "/juːˈbɪkwɪtəs/",
+                    options: [
+                        { text: "稀有的", correct: false },
+                        { text: "无所不在的", correct: true },
+                        { text: "隐藏的", correct: false },
+                        { text: "秘密的", correct: false }
+                    ],
+                    definition: "present, appearing, or found everywhere",
+                    translation: "无所不在的，普遍的"
+                }
+            ],
+            U4: [
+                {
+                    word: "Esoteric",
+                    pronunciation: "/ˌiːsəˈterɪk/",
+                    options: [
+                        { text: "简单的", correct: false },
+                        { text: "难懂的", correct: true },
+                        { text: "明显的", correct: false },
+                        { text: "普通的", correct: false }
+                    ],
+                    definition: "intended for or likely to be understood by only a small number of people",
+                    translation: "秘传的，难懂的"
+                },
+                {
+                    word: "Magnanimous",
+                    pronunciation: "/mæɡˈnænɪməs/",
+                    options: [
+                        { text: "小气的", correct: false },
+                        { text: "宽宏大量的", correct: true },
+                        { text: "自私的", correct: false },
+                        { text: "吝啬的", correct: false }
+                    ],
+                    definition: "very generous or forgiving",
+                    translation: "宽宏大量的，高尚的"
+                }
+            ],
+            U5: [
+                {
+                    word: "Sagacious",
+                    pronunciation: "/səˈɡeɪʃəs/",
+                    options: [
+                        { text: "愚蠢的", correct: false },
+                        { text: "睿智的", correct: true },
+                        { text: "天真的", correct: false },
+                        { text: "幼稚的", correct: false }
+                    ],
+                    definition: "having or showing keen mental discernment and good judgment",
+                    translation: "睿智的，明智的"
+                },
+                {
+                    word: "Veracious",
+                    pronunciation: "/vəˈreɪʃəs/",
+                    options: [
+                        { text: "说谎的", correct: false },
+                        { text: "诚实的", correct: true },
+                        { text: "欺骗的", correct: false },
+                        { text: "虚假的", correct: false }
+                    ],
+                    definition: "speaking or representing the truth",
+                    translation: "诚实的，真实的"
+                }
+            ],
+            U6: [
+                {
+                    word: "Mellifluous",
+                    pronunciation: "/məˈlɪfluəs/",
+                    options: [
+                        { text: "刺耳的", correct: false },
+                        { text: "悦耳的", correct: true },
+                        { text: "嘈杂的", correct: false },
+                        { text: "难听的", correct: false }
+                    ],
+                    definition: "sweet or musical; pleasant to hear",
+                    translation: "悦耳的，甜美的"
+                },
+                {
+                    word: "Petulant",
+                    pronunciation: "/ˈpetʃələnt/",
+                    options: [
+                        { text: "耐心的", correct: false },
+                        { text: "任性的", correct: true },
+                        { text: "温和的", correct: false },
+                        { text: "宽容的", correct: false }
+                    ],
+                    definition: "childishly sulky or bad-tempered",
+                    translation: "任性的，脾气坏的"
+                }
+            ],
+            U7: [
+                {
+                    word: "Temerarious",
+                    pronunciation: "/ˌteməˈreəriəs/",
+                    options: [
+                        { text: "谨慎的", correct: false },
+                        { text: "鲁莽的", correct: true },
+                        { text: "小心的", correct: false },
+                        { text: "保守的", correct: false }
+                    ],
+                    definition: "recklessly bold or rash",
+                    translation: "鲁莽的，大胆的"
+                },
+                {
+                    word: "Vivacious",
+                    pronunciation: "/vɪˈveɪʃəs/",
+                    options: [
+                        { text: "沉闷的", correct: false },
+                        { text: "活泼的", correct: true },
+                        { text: "懒惰的", correct: false },
+                        { text: "疲倦的", correct: false }
+                    ],
+                    definition: "attractively lively and animated",
+                    translation: "活泼的，有生气的"
+                }
+            ],
+            U8: [
+                {
+                    word: "Winsome",
+                    pronunciation: "/ˈwɪnsəm/",
+                    options: [
+                        { text: "丑陋的", correct: false },
+                        { text: "迷人的", correct: true },
+                        { text: "可怕的", correct: false },
+                        { text: "令人厌恶的", correct: false }
+                    ],
+                    definition: "attractive or appealing in appearance or character",
+                    translation: "迷人的，可爱的"
+                },
+                {
+                    word: "Zealous",
+                    pronunciation: "/ˈzeləs/",
+                    options: [
+                        { text: "冷漠的", correct: false },
+                        { text: "热心的", correct: true },
+                        { text: "懒惰的", correct: false },
+                        { text: "消极的", correct: false }
+                    ],
+                    definition: "showing great energy or passion in pursuit of a cause",
+                    translation: "热心的，积极的"
+                }
+            ]
+        };
+        
+        // ==================== 全局状态管理 ====================
+        
+        // 当前单元状态
+        let currentUnits = {
+            listening: 'U1',
+            reading: 'U1',
+            vocabulary: 'U1'
+        };
+
+        // 当前练习索引
+        let currentExerciseIndices = {
+            listening: 0,
+            reading: 0,
+            vocabulary: 0
+        };
+
+        // ==================== 学习进度统计系统 ====================
+        
+        // 学习统计数据
+        let learningStats = {
+            // 当前会话得分
+            scores: {
+                listening: 0,
+                reading: 0,
+                vocabulary: 0
+            },
+            // 总学习统计
+            totalStats: {
+                wordsLearned: 0,
+                exercisesCompleted: 0,
+                totalTimeSpent: 0, // 分钟
+                currentStreak: 0, // 连续学习天数
+                lastStudyDate: null,
+                unitsCompleted: {
+                    listening: [],
+                    reading: [],
+                    vocabulary: []
+                },
+                dailyGoals: {
+                    listening: 0,
+                    reading: 0,
+                    vocabulary: 0
+                }
+            },
+            // 学习历史
+            studyHistory: []
+        };
+        
+        // 初始化学习统计
+        function initLearningStats() {
+            const savedStats = localStorage.getItem('learningStats');
+            if (savedStats) {
+                learningStats.totalStats = { ...learningStats.totalStats, ...JSON.parse(savedStats) };
+            }
+            
+            // 检查今日学习
+            checkDailyProgress();
+        }
+        
+        // 检查每日学习进度
+        function checkDailyProgress() {
+            const today = new Date().toDateString();
+            const lastStudyDate = learningStats.totalStats.lastStudyDate;
+            
+            if (lastStudyDate !== today) {
+                // 新的一天，重置每日目标
+                learningStats.totalStats.dailyGoals = {
+                    listening: 0,
+                    reading: 0,
+                    vocabulary: 0
+                };
+                
+                // 更新连续学习天数
+                if (lastStudyDate) {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    if (lastStudyDate === yesterday.toDateString()) {
+                        learningStats.totalStats.currentStreak++;
+                    } else {
+                        learningStats.totalStats.currentStreak = 1;
+                    }
+                } else {
+                    learningStats.totalStats.currentStreak = 1;
+                }
+                
+                learningStats.totalStats.lastStudyDate = today;
+                saveLearningStats();
+            }
+        }
+        
+        // 更新学习进度
+        function updateLearningProgress(exerciseType, isCorrect, timeSpent = 0) {
+            // 更新当前会话得分
+            if (isCorrect) {
+                learningStats.scores[exerciseType]++;
+            }
+            
+            // 更新总统计
+            learningStats.totalStats.exercisesCompleted++;
+            learningStats.totalStats.totalTimeSpent += timeSpent;
+            learningStats.totalStats.dailyGoals[exerciseType]++;
+            
+            // 记录学习历史
+            const studyRecord = {
+                date: new Date().toISOString(),
+                exerciseType: exerciseType,
+                isCorrect: isCorrect,
+                timeSpent: timeSpent,
+                unit: currentUnits[exerciseType]
+            };
+            learningStats.studyHistory.push(studyRecord);
+            
+            // 检查是否完成单元
+            checkUnitCompletion(exerciseType);
+            
+            // 保存统计
+            saveLearningStats();
+            
+            // 更新UI
+            updateProgressUI();
+        }
+        
+        // 检查单元完成情况
+        function checkUnitCompletion(exerciseType) {
+            const unit = currentUnits[exerciseType];
+            const unitStats = learningStats.totalStats.unitsCompleted[exerciseType];
+            
+            if (!unitStats.includes(unit)) {
+                const totalExercises = getCurrentUnitExerciseCount(exerciseType);
+                const completedExercises = learningStats.totalStats.dailyGoals[exerciseType];
+                
+                if (completedExercises >= totalExercises) {
+                    unitStats.push(unit);
+                    learningStats.totalStats.wordsLearned += totalExercises;
+                    
+                    // 显示单元完成消息
+                    showMessage(`恭喜！您已完成${unit}单元${exerciseType}练习`, 'success');
+                    
+                    // 检查成就
+                    checkAchievements();
+                }
+            }
+        }
+        
+        // 保存学习统计
+        function saveLearningStats() {
+            localStorage.setItem('learningStats', JSON.stringify(learningStats.totalStats));
+        }
+        
+        // 更新进度UI
+        function updateProgressUI() {
+            // 更新首页进度
+            updateHomeProgress();
+            
+            // 更新个人中心统计
+            updateProfileStats();
+        }
+
+        // ==================== 成就系统 ====================
+        
+        // 成就定义
+        const achievements = {
+            'first_word': {
+                name: '初学乍练',
+                description: '完成第一个单词练习',
+                icon: 'fa-star',
+                color: 'yellow',
+                condition: (stats) => stats.exercisesCompleted >= 1
+            },
+            'listening_master': {
+                name: '听力达人',
+                description: '完成10个听力练习',
+                icon: 'fa-headphones',
+                color: 'blue',
+                condition: (stats) => stats.unitsCompleted.listening.length >= 2
+            },
+            'reading_expert': {
+                name: '阅读专家',
+                description: '完成10个阅读练习',
+                icon: 'fa-book',
+                color: 'green',
+                condition: (stats) => stats.unitsCompleted.reading.length >= 2
+            },
+            'vocabulary_guru': {
+                name: '词汇大师',
+                description: '完成10个词汇练习',
+                icon: 'fa-list-alt',
+                color: 'purple',
+                condition: (stats) => stats.unitsCompleted.vocabulary.length >= 2
+            },
+            'streak_7': {
+                name: '坚持不懈',
+                description: '连续学习7天',
+                icon: 'fa-fire',
+                color: 'red',
+                condition: (stats) => stats.currentStreak >= 7
+            },
+            'streak_30': {
+                name: '学习狂人',
+                description: '连续学习30天',
+                icon: 'fa-trophy',
+                color: 'gold',
+                condition: (stats) => stats.currentStreak >= 30
+            },
+            'unit_complete': {
+                name: '单元完成者',
+                description: '完成一个完整单元的所有练习',
+                icon: 'fa-check-circle',
+                color: 'green',
+                condition: (stats) => {
+                    const totalUnits = Object.values(stats.unitsCompleted).reduce((sum, arr) => sum + arr.length, 0);
+                    return totalUnits >= 1;
+                }
+            },
+            'all_units': {
+                name: '全能学霸',
+                description: '完成所有单元的所有练习',
+                icon: 'fa-crown',
+                color: 'gold',
+                condition: (stats) => {
+                    const totalUnits = Object.values(stats.unitsCompleted).reduce((sum, arr) => sum + arr.length, 0);
+                    return totalUnits >= 24; // 8个单元 × 3种练习类型
+                }
+            }
+        };
+        
+        // 检查成就
+        function checkAchievements() {
+            const stats = learningStats.totalStats;
+            const unlockedAchievements = [];
+            
+            for (const [key, achievement] of Object.entries(achievements)) {
+                if (!isAchievementUnlocked(key) && achievement.condition(stats)) {
+                    unlockAchievement(key);
+                    unlockedAchievements.push(achievement);
+                }
+            }
+            
+            // 显示新解锁的成就
+            if (unlockedAchievements.length > 0) {
+                showAchievementNotification(unlockedAchievements);
+            }
+        }
+        
+        // 检查成就是否已解锁
+        function isAchievementUnlocked(achievementKey) {
+            const unlockedAchievements = JSON.parse(localStorage.getItem('unlockedAchievements') || '[]');
+            return unlockedAchievements.includes(achievementKey);
+        }
+        
+        // 解锁成就
+        function unlockAchievement(achievementKey) {
+            const unlockedAchievements = JSON.parse(localStorage.getItem('unlockedAchievements') || '[]');
+            if (!unlockedAchievements.includes(achievementKey)) {
+                unlockedAchievements.push(achievementKey);
+                localStorage.setItem('unlockedAchievements', JSON.stringify(unlockedAchievements));
+            }
+        }
+        
+        // 显示成就通知
+        function showAchievementNotification(achievements) {
+            achievements.forEach((achievement, index) => {
+                setTimeout(() => {
+                    showAchievementModal(achievement);
+                }, index * 1000);
+            });
+        }
+        
+        // 显示成就弹窗
+        function showAchievementModal(achievement) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl p-8 max-w-sm mx-4 text-center animate-bounce">
+                    <div class="w-20 h-20 bg-${achievement.color}-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                        <i class="fa ${achievement.icon} text-${achievement.color}-500 text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">🎉 成就解锁！</h3>
+                    <h4 class="text-xl font-semibold text-${achievement.color}-600 mb-2">${achievement.name}</h4>
+                    <p class="text-gray-600 mb-4">${achievement.description}</p>
+                    <button onclick="this.parentElement.parentElement.remove()" class="btn-primary">
+                        太棒了！
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // 3秒后自动关闭
+            setTimeout(() => {
+                if (modal.parentElement) {
+                    modal.remove();
+                }
+            }, 3000);
+        }
+
+        // 是否正在播放音频
+        let isPlaying = false;
+        // 音频进度定时器
+        let audioInterval;
+
+        // ==================== 单元选择功能 ====================
+        
+        // 切换单元选择显示/隐藏
+        function toggleUnitSelection(exerciseType) {
+            const unitSelection = document.getElementById(`${exerciseType}-unit-selection`);
+            
+            if (unitSelection.classList.contains('hidden')) {
+                // 显示单元选择
+                unitSelection.classList.remove('hidden');
+                // 添加平滑展开动画
+                unitSelection.style.maxHeight = '0';
+                unitSelection.style.overflow = 'hidden';
+                unitSelection.style.transition = 'max-height 0.3s ease-out';
+                
+                setTimeout(() => {
+                    unitSelection.style.maxHeight = '200px';
+                }, 10);
+            } else {
+                // 隐藏单元选择
+                unitSelection.style.maxHeight = '0';
+                setTimeout(() => {
+                    unitSelection.classList.add('hidden');
+                    unitSelection.style.maxHeight = '';
+                    unitSelection.style.overflow = '';
+                    unitSelection.style.transition = '';
+                }, 300);
+            }
+        }
+        
+        // 选择单元
+        function selectUnit(exerciseType, unit) {
+            // 更新当前单元
+            currentUnits[exerciseType] = unit;
+            
+            // 重置练习索引和得分
+            currentExerciseIndices[exerciseType] = 0;
+            scores[exerciseType] = 0;
+            
+            // 更新UI显示
+            updateUnitSelectionUI(exerciseType, unit);
+            
+            // 更新当前单元显示
+            document.getElementById(`${exerciseType}-current-unit`).textContent = unit;
+            
+            // 重置练习内容
+            resetExerciseContent(exerciseType);
+            
+            // 隐藏单元选择框
+            hideUnitSelection(exerciseType);
+            
+            // 显示成功消息
+            showMessage(`已切换到${unit}单元`, 'success');
+        }
+
+        // 隐藏单元选择框
+        function hideUnitSelection(exerciseType) {
+            const unitSelection = document.getElementById(`${exerciseType}-unit-selection`);
+            
+            unitSelection.style.maxHeight = '0';
+            setTimeout(() => {
+                unitSelection.classList.add('hidden');
+                unitSelection.style.maxHeight = '';
+                unitSelection.style.overflow = '';
+                unitSelection.style.transition = '';
+            }, 300);
+        }
+
+        // 更新单元选择UI
+        function updateUnitSelectionUI(exerciseType, selectedUnit) {
+            const unitButtons = document.querySelectorAll(`#${exerciseType}-screen .unit-btn`);
+            
+            unitButtons.forEach(btn => {
+                const unit = btn.getAttribute('data-unit');
+                if (unit === selectedUnit) {
+                    btn.classList.remove('bg-gray-100', 'text-gray-600');
+                    btn.classList.add('bg-blue-100', 'text-blue-800');
+                } else {
+                    btn.classList.remove('bg-blue-100', 'text-blue-800');
+                    btn.classList.add('bg-gray-100', 'text-gray-600');
+                }
+            });
+        }
+
+        // 重置练习内容
+        function resetExerciseContent(exerciseType) {
+            switch(exerciseType) {
+                case 'listening':
+                    resetListeningExercise();
+                    break;
+                case 'reading':
+                    resetReadingExercise();
+                    break;
+                case 'vocabulary':
+                    resetVocabularyExercise();
+                    break;
+            }
+        }
+
+        // 重置听力练习
+        function resetListeningExercise() {
+            // 重置输入框
+            document.getElementById('english-input').value = '';
+            document.getElementById('chinese-input').value = '';
+            document.getElementById('english-input').disabled = false;
+            document.getElementById('chinese-input').disabled = false;
+            
+            // 隐藏反馈
+            document.getElementById('feedback-container').classList.add('hidden');
+            document.getElementById('next-word').classList.add('hidden');
+            document.getElementById('check-answer').classList.remove('hidden');
+            
+            // 重置音频进度
+            document.getElementById('audio-progress').style.width = '0%';
+            
+            // 重置播放按钮
+            document.getElementById('play-word').innerHTML = '<i class="fa fa-volume-up text-2xl"></i>';
+            
+            // 更新单词计数器和得分
+            updateWordCounter();
+            updateScore();
+        }
+
+        // 重置阅读练习
+        function resetReadingExercise() {
+            // 重置选项样式
+            const options = document.querySelectorAll('#reading-options .option');
+            options.forEach(option => {
+                option.classList.remove('bg-green-100', 'bg-red-100', 'border-green-500', 'border-red-500');
+            });
+            
+            // 隐藏反馈
+            document.getElementById('feedback-container').classList.add('hidden');
+            
+            // 加载当前单元的第一题
+            loadCurrentReadingExercise();
+        }
+
+        // 重置词汇练习
+        function resetVocabularyExercise() {
+            // 重置选项样式
+            const options = document.querySelectorAll('#vocab-options .vocab-option');
+            options.forEach(option => {
+                option.classList.remove('bg-green-100', 'bg-red-100', 'border-green-500', 'border-red-500');
+            });
+            
+            // 隐藏反馈
+            document.getElementById('vocab-feedback').classList.add('hidden');
+            
+            // 重置播放按钮
+            document.getElementById('play-audio').innerHTML = '<i class="fa fa-volume-up mr-1"></i> 播放发音';
+            
+            // 加载当前单元的第一个单词
+            loadCurrentVocabularyExercise();
+        }
+
+        // 获取当前练习数据
+        function getCurrentExerciseData(exerciseType) {
+            const unit = currentUnits[exerciseType];
+            const index = currentExerciseIndices[exerciseType];
+            
+            switch(exerciseType) {
+                case 'listening':
+                    return listeningExercisesByUnit[unit][index];
+                case 'reading':
+                    return readingExercisesByUnit[unit][index];
+                case 'vocabulary':
+                    return vocabularyExercisesByUnit[unit][index];
+                default:
+                    return null;
+            }
+        }
+
+        // 获取当前单元的总练习数
+        function getCurrentUnitExerciseCount(exerciseType) {
+            const unit = currentUnits[exerciseType];
+            
+            switch(exerciseType) {
+                case 'listening':
+                    return listeningExercisesByUnit[unit].length;
+                case 'reading':
+                    return readingExercisesByUnit[unit].length;
+                case 'vocabulary':
+                    return vocabularyExercisesByUnit[unit].length;
+                default:
+                    return 0;
+            }
+        }
+
+        // DOM Elements
+        const screens = document.querySelectorAll('.screen');
+        const navBtns = document.querySelectorAll('.nav-btn');
+        const playButton = document.getElementById('play-button');
+        const showTranslationBtn = document.getElementById('show-translation');
+        const translationText = document.getElementById('translation-text');
+        const audioProgress = document.getElementById('audio-progress');
+        const options = document.querySelectorAll('.option');
+        const feedbackContainer = document.getElementById('feedback-container');
+        const vocabOptions = document.querySelectorAll('.vocab-option');
+        const vocabFeedback = document.getElementById('vocab-feedback');
+
+        // Show specific screen
+        function showScreen(screenId) {
+            // 停止所有音频播放
+            ttsService.stopSpeaking();
+            
+            screens.forEach(screen => {
+                screen.classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+            
+            // Update navigation buttons
+            navBtns.forEach(btn => {
+                btn.classList.remove('text-primary');
+                btn.classList.add('text-gray-400');
+            });
+            
+            // Highlight active nav button
+            const activeNavBtn = document.querySelector(`button[onclick="showScreen('${screenId}')"]`);
+            if (activeNavBtn) {
+                activeNavBtn.classList.remove('text-gray-400');
+                activeNavBtn.classList.add('text-primary');
+            }
+
+            // Initialize progress chart if on profile screen
+            if (screenId === 'profile-screen') {
+                initProgressChart();
+                updateProfilePage();
+            }
+        }
+
+        // 初始化进度图表
+        function initProgressChart() {
+            const ctx = document.getElementById('progress-chart').getContext('2d');
+            
+            // 检查图表是否已存在
+            if (window.progressChart) {
+                window.progressChart.destroy();
+            }
+            
+            window.progressChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                    datasets: [{
+                        label: '已学单词',
+                        data: [120, 190, 300, 450, 600, 750],
+                        backgroundColor: 'rgba(30, 136, 229, 0.2)',
+                        borderColor: 'rgba(30, 136, 229, 1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '单词数量'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '月份'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // 初始化练习功能
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化听力练习界面
+            updateWordCounter();
+            updateAudioDuration();
+            updateScore();
+            
+            // 初始化阅读练习
+            loadCurrentReadingExercise();
+            
+            // 初始化词汇练习
+            loadCurrentVocabularyExercise();
+            
+            // 播放单词按钮点击事件
+            document.getElementById('play-word').addEventListener('click', playWord);
+            
+            // 检查答案按钮点击事件
+            document.getElementById('check-answer').addEventListener('click', checkAnswer);
+            
+            // 下一个单词按钮点击事件
+            document.getElementById('next-word').addEventListener('click', nextWord);
+        });
+        
+        // 播放单词 - 使用TTS服务（优化版）
+        function playWord() {
+            const playButton = document.getElementById('play-word');
+            const progressBar = document.getElementById('audio-progress');
+            
+            // 防止重复点击
+            if (playButton.disabled) {
+                return;
+            }
+            
+            if (ttsService.isCurrentlyPlaying() || ttsService.isPending) {
+                // 停止播放
+                ttsService.stopSpeaking();
+                resetPlayButton(playButton, progressBar);
+            } else {
+                // 开始播放
+                playButton.disabled = true;
+                playButton.innerHTML = '<i class="fa fa-volume-up text-2xl animate-pulse"></i>';
+                
+                const currentWord = getCurrentExerciseData('listening');
+                
+                // 使用TTS播放单词
+                const ttsSettings = getCurrentTTSSettings();
+                const utterance = ttsService.speakWord(currentWord.word, {
+                    rate: ttsSettings.rate * 0.8, // 听力练习使用稍慢的语速
+                    pitch: ttsSettings.pitch,
+                    volume: ttsSettings.volume,
+                    onStart: () => {
+                        // 开始播放时的动画
+                        animateProgressBar(currentWord.audioDuration);
+                    },
+                    onEnd: () => {
+                        // 播放结束
+                        resetPlayButton(playButton, progressBar);
+                        progressBar.style.width = '100%';
+                    },
+                    onError: (error) => {
+                        // 播放错误处理
+                        resetPlayButton(playButton, progressBar);
+                        showMessage('语音播放失败，请重试', 'error');
+                        console.error('TTS播放错误:', error);
+                    }
+                });
+                
+                // 如果没有成功创建utterance（被防抖拦截），恢复按钮状态
+                if (!utterance) {
+                    resetPlayButton(playButton, progressBar);
+                }
+            }
+        }
+        
+        // 重置播放按钮状态
+        function resetPlayButton(playButton, progressBar) {
+            playButton.disabled = false;
+            playButton.innerHTML = '<i class="fa fa-volume-up text-2xl"></i>';
+            progressBar.style.width = '0%';
+        }
+
+        // 进度条动画
+        function animateProgressBar(duration) {
+            const progressBar = document.getElementById('audio-progress');
+            const progressStep = 100 / (duration * 10); // 每100毫秒更新一次
+            let progress = 0;
+            
+            const interval = setInterval(() => {
+                progress += progressStep;
+                progressBar.style.width = `${Math.min(progress, 100)}%`;
+                
+                if (progress >= 100 || !ttsService.isCurrentlyPlaying()) {
+                    clearInterval(interval);
+                }
+            }, 100);
+        }
+        
+        // 检查答案
+        function checkAnswer() {
+            const englishInput = document.getElementById('english-input').value.trim().toLowerCase();
+            const chineseInput = document.getElementById('chinese-input').value.trim();
+            const currentWord = getCurrentExerciseData('listening');
+            
+            // 检查英文拼写（不区分大小写）
+            const isEnglishCorrect = englishInput === currentWord.word.toLowerCase();
+            
+            // 检查中文翻译（简单匹配，实际应用中可能需要更复杂的匹配逻辑）
+            const isChineseCorrect = chineseInput.includes(currentWord.chinese) || 
+                                    currentWord.chinese.includes(chineseInput);
+            
+            // 显示正确答案
+            document.getElementById('correct-english').textContent = currentWord.word;
+            document.getElementById('correct-chinese').textContent = currentWord.chinese;
+            
+            // 显示反馈
+            const feedbackContainer = document.getElementById('feedback-container');
+            feedbackContainer.classList.remove('hidden');
+            
+            // 如果答对了，增加分数
+            if (isEnglishCorrect && isChineseCorrect) {
+                learningStats.scores.listening++;
+                updateScore();
+                
+                // 更新学习进度
+                updateLearningProgress('listening', true, 1);
+            } else {
+                // 记录错误练习
+                updateLearningProgress('listening', false, 1);
+            }
+            
+            // 禁用输入框和检查按钮
+            document.getElementById('english-input').disabled = true;
+            document.getElementById('chinese-input').disabled = true;
+            document.getElementById('check-answer').classList.add('hidden');
+            
+            // 显示下一个单词按钮
+            document.getElementById('next-word').classList.remove('hidden');
+        }
+        
+        // 下一个单词
+        function nextWord() {
+            const totalWords = getCurrentUnitExerciseCount('listening');
+            
+            // 移动到下一个单词
+            currentExerciseIndices.listening = (currentExerciseIndices.listening + 1) % totalWords;
+            
+            // 重置输入框
+            document.getElementById('english-input').value = '';
+            document.getElementById('chinese-input').value = '';
+            document.getElementById('english-input').disabled = false;
+            document.getElementById('chinese-input').disabled = false;
+            
+            // 隐藏反馈和下一个单词按钮
+            document.getElementById('feedback-container').classList.add('hidden');
+            document.getElementById('next-word').classList.add('hidden');
+            
+            // 显示检查按钮
+            document.getElementById('check-answer').classList.remove('hidden');
+            
+            // 重置音频进度
+            document.getElementById('audio-progress').style.width = '0%';
+            
+            // 更新界面
+            updateWordCounter();
+            updateAudioDuration();
+        }
+        
+        // 更新单词计数器
+        function updateWordCounter() {
+            const currentIndex = currentExerciseIndices.listening;
+            const totalWords = getCurrentUnitExerciseCount('listening');
+            document.getElementById('current-word').textContent = currentIndex + 1;
+            document.getElementById('total-words').textContent = totalWords;
+        }
+        
+        // 更新音频时长显示
+        function updateAudioDuration() {
+            const currentWord = getCurrentExerciseData('listening');
+            const minutes = Math.floor(currentWord.audioDuration / 60);
+            const seconds = Math.floor(currentWord.audioDuration % 60);
+            document.getElementById('audio-duration').textContent = 
+                `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+
+        // 更新得分显示
+        function updateScore() {
+            document.getElementById('score').textContent = learningStats.scores.listening;
+        }
+
+        // 显示/隐藏翻译
+        showTranslationBtn.addEventListener('click', function() {
+            if (translationText.classList.contains('hidden')) {
+                translationText.classList.remove('hidden');
+                showTranslationBtn.textContent = '隐藏翻译';
+            } else {
+                translationText.classList.add('hidden');
+                showTranslationBtn.textContent = '显示翻译';
+            }
+        });
+
+        // Next listening exercise
+        function nextListeningExercise() {
+            currentListeningIndex = (currentListeningIndex + 1) % listeningExercises.length;
+            const exercise = listeningExercises[currentListeningIndex];
+            
+            document.getElementById('listening-text').textContent = exercise.text;
+            translationText.textContent = exercise.translation;
+            translationText.classList.add('hidden');
+            showTranslationBtn.textContent = 'Show Translation';
+            
+            // Reset audio player
+            clearInterval(audioInterval);
+            audioProgress.style.width = '0%';
+            playButton.innerHTML = '<i class="fa fa-play text-xl"></i>';
+            isPlaying = false;
+        }
+
+        // Reading exercise functionality
+        options.forEach(option => {
+            option.addEventListener('click', function() {
+                const isCorrect = this.getAttribute('data-correct') === 'true';
+                
+                // Remove previous selections
+                options.forEach(opt => {
+                    opt.classList.remove('bg-green-100', 'bg-red-100', 'border-green-500', 'border-red-500');
+                });
+                
+                // Highlight selected option
+                if (isCorrect) {
+                    this.classList.add('bg-green-100', 'border-green-500');
+                } else {
+                    this.classList.add('bg-red-100', 'border-red-500');
+                    
+                    // Highlight correct answer
+                    const correctOption = document.querySelector('.option[data-correct="true"]');
+                    correctOption.classList.add('bg-green-100', 'border-green-500');
+                }
+                
+                // Show feedback
+                feedbackContainer.classList.remove('hidden');
+            });
+        });
+
+        // 加载当前阅读练习
+        function loadCurrentReadingExercise() {
+            const exercise = getCurrentExerciseData('reading');
+            
+            document.getElementById('reading-question').textContent = exercise.question;
+            
+            // Update options
+            const optionElements = document.querySelectorAll('#reading-options .option');
+            exercise.options.forEach((option, index) => {
+                optionElements[index].textContent = option.text;
+                optionElements[index].setAttribute('data-correct', option.correct);
+                optionElements[index].classList.remove('bg-green-100', 'bg-red-100', 'border-green-500', 'border-red-500');
+            });
+        }
+
+        // Next reading exercise
+        function nextReadingExercise() {
+            const totalExercises = getCurrentUnitExerciseCount('reading');
+            currentExerciseIndices.reading = (currentExerciseIndices.reading + 1) % totalExercises;
+            
+            loadCurrentReadingExercise();
+            
+            // Hide feedback
+            feedbackContainer.classList.add('hidden');
+        }
+
+        // Vocabulary exercise functionality
+        vocabOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const isCorrect = this.getAttribute('data-correct') === 'true';
+                
+                // Remove previous selections
+                vocabOptions.forEach(opt => {
+                    opt.classList.remove('bg-green-100', 'bg-red-100', 'border-green-500', 'border-red-500');
+                });
+                
+                // Highlight selected option
+                if (isCorrect) {
+                    this.classList.add('bg-green-100', 'border-green-500');
+                    vocabFeedback.classList.remove('hidden');
+                } else {
+                    this.classList.add('bg-red-100', 'border-red-500');
+                    
+                    // Highlight correct answer
+                    const correctOption = document.querySelector('.vocab-option[data-correct="true"]');
+                    correctOption.classList.add('bg-green-100', 'border-green-500');
+                }
+            });
+        });
+
+        // 加载当前词汇练习
+        function loadCurrentVocabularyExercise() {
+            const exercise = getCurrentExerciseData('vocabulary');
+            
+            document.getElementById('vocab-word').textContent = exercise.word;
+            
+            // Update options
+            const optionElements = document.querySelectorAll('#vocab-options .vocab-option');
+            exercise.options.forEach((option, index) => {
+                optionElements[index].textContent = option.text;
+                optionElements[index].setAttribute('data-correct', option.correct);
+                optionElements[index].classList.remove('bg-green-100', 'bg-red-100', 'border-green-500', 'border-red-500');
+            });
+        }
+
+        // 播放词汇发音（优化版）
+        function playVocabAudio() {
+            const playButton = document.getElementById('play-audio');
+            const currentExercise = getCurrentExerciseData('vocabulary');
+            
+            // 防止重复点击
+            if (playButton.disabled) {
+                return;
+            }
+            
+            if (ttsService.isCurrentlyPlaying() || ttsService.isPending) {
+                // 停止播放
+                ttsService.stopSpeaking();
+                resetVocabPlayButton(playButton);
+            } else {
+                // 开始播放
+                playButton.disabled = true;
+                playButton.innerHTML = '<i class="fa fa-volume-up mr-1 animate-pulse"></i> 播放中...';
+                
+                const ttsSettings = getCurrentTTSSettings();
+                const utterance = ttsService.speakWord(currentExercise.word, {
+                    rate: ttsSettings.rate,
+                    pitch: ttsSettings.pitch,
+                    volume: ttsSettings.volume,
+                    onEnd: () => {
+                        resetVocabPlayButton(playButton);
+                    },
+                    onError: (error) => {
+                        resetVocabPlayButton(playButton);
+                        showMessage('语音播放失败，请重试', 'error');
+                        console.error('TTS播放错误:', error);
+                    }
+                });
+                
+                // 如果没有成功创建utterance（被防抖拦截），恢复按钮状态
+                if (!utterance) {
+                    resetVocabPlayButton(playButton);
+                }
+            }
+        }
+        
+        // 重置词汇播放按钮状态
+        function resetVocabPlayButton(playButton) {
+            playButton.disabled = false;
+            playButton.innerHTML = '<i class="fa fa-volume-up mr-1"></i> 播放发音';
+        }
+
+        // Next vocabulary exercise
+        function nextVocabExercise() {
+            const totalExercises = getCurrentUnitExerciseCount('vocabulary');
+            currentExerciseIndices.vocabulary = (currentExerciseIndices.vocabulary + 1) % totalExercises;
+            
+            loadCurrentVocabularyExercise();
+            
+            // Hide feedback
+            vocabFeedback.classList.add('hidden');
+            
+            // 重置播放按钮状态
+            const playButton = document.getElementById('play-audio');
+            playButton.innerHTML = '<i class="fa fa-volume-up mr-1"></i> 播放发音';
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            showScreen('home-screen');
+            
+            // Add event listeners for option selections
+            document.querySelectorAll('.option').forEach(option => {
+                option.addEventListener('click', function() {
+                    // This function is already defined above
+                });
+            });
+            
+            document.querySelectorAll('.vocab-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    // This function is already defined above
+                });
+            });
+        });
+
+        // ==================== 登录功能 ====================
+        
+        // 用户状态管理
+        let currentUser = null;
+        let isLoggedIn = false;
+
+        // 模拟用户数据库
+        const users = [
+            {
+                id: 1,
+                username: 'admin',
+                email: 'admin@example.com',
+                phone: '13800138000',
+                password: '123456',
+                name: '管理员',
+                avatar: '',
+                level: '高级',
+                wordsLearned: 1200,
+                weeksStreak: 7,
+                dailyMinutes: 30
+            },
+            {
+                id: 2,
+                username: 'student',
+                email: 'student@example.com',
+                phone: '13800138001',
+                password: '123456',
+                name: '学生用户',
+                avatar: '',
+                level: '中级',
+                wordsLearned: 800,
+                weeksStreak: 5,
+                dailyMinutes: 25
+            }
+        ];
+
+        // 检查登录状态
+        function checkLoginStatus() {
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                isLoggedIn = true;
+                updateLoginUI();
+            }
+        }
+
+        // 更新登录UI
+        function updateLoginUI() {
+            const loginBtn = document.getElementById('login-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            const userIcon = document.getElementById('user-icon');
+
+            if (isLoggedIn && currentUser) {
+                loginBtn.classList.add('hidden');
+                logoutBtn.classList.remove('hidden');
+                userIcon.title = `欢迎，${currentUser.name}`;
+                updateProfilePage();
+            } else {
+                loginBtn.classList.remove('hidden');
+                logoutBtn.classList.add('hidden');
+                userIcon.title = '点击登录';
+                updateProfilePage();
+            }
+        }
+
+        // 更新个人资料页面
+        function updateProfilePage() {
+            const profileName = document.getElementById('profile-name');
+            const profileLevel = document.getElementById('profile-level');
+            const profileWords = document.getElementById('profile-words');
+            const profileWeeks = document.getElementById('profile-weeks');
+            const profileMinutes = document.getElementById('profile-minutes');
+            const loginPrompt = document.getElementById('login-prompt');
+            const profileStats = document.getElementById('profile-stats');
+
+            if (isLoggedIn && currentUser) {
+                profileName.textContent = currentUser.name;
+                profileLevel.textContent = `${currentUser.level}学习者`;
+                profileWords.textContent = currentUser.wordsLearned;
+                profileWeeks.textContent = currentUser.weeksStreak;
+                profileMinutes.textContent = currentUser.dailyMinutes;
+                
+                loginPrompt.style.display = 'none';
+                profileStats.style.display = 'flex';
+            } else {
+                profileName.textContent = '请先登录';
+                profileLevel.textContent = '未登录用户';
+                profileWords.textContent = '0';
+                profileWeeks.textContent = '0';
+                profileMinutes.textContent = '0';
+                
+                loginPrompt.style.display = 'block';
+                profileStats.style.display = 'none';
+            }
+        }
+
+        // 登录功能
+        function login(username, password) {
+            // 查找用户
+            const user = users.find(u => 
+                u.username === username || 
+                u.email === username || 
+                u.phone === username
+            );
+
+            if (user && user.password === password) {
+                currentUser = user;
+                isLoggedIn = true;
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                updateLoginUI();
+                showScreen('home-screen');
+                
+                // 显示成功消息
+                showMessage('登录成功！', 'success');
+                return true;
+            } else {
+                showMessage('用户名或密码错误！', 'error');
+                return false;
+            }
+        }
+
+        // 注册功能
+        function register(userData) {
+            // 检查用户名是否已存在
+            const existingUser = users.find(u => 
+                u.username === userData.username || 
+                u.email === userData.email || 
+                u.phone === userData.phone
+            );
+
+            if (existingUser) {
+                showMessage('用户名、邮箱或手机号已存在！', 'error');
+                return false;
+            }
+
+            // 创建新用户
+            const newUser = {
+                id: users.length + 1,
+                username: userData.username,
+                email: userData.email,
+                phone: userData.phone,
+                password: userData.password,
+                name: userData.username,
+                avatar: '',
+                level: '初级',
+                wordsLearned: 0,
+                weeksStreak: 0,
+                dailyMinutes: 0
+            };
+
+            users.push(newUser);
+            showMessage('注册成功！请登录', 'success');
+            showScreen('login-screen');
+            return true;
+        }
+
+        // 退出登录
+        function logout() {
+            currentUser = null;
+            isLoggedIn = false;
+            localStorage.removeItem('currentUser');
+            updateLoginUI();
+            showScreen('home-screen');
+            showMessage('已退出登录', 'info');
+        }
+
+        // 显示消息
+        function showMessage(message, type = 'info') {
+            // 创建消息元素
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium transform transition-all duration-300 translate-x-full`;
+            
+            // 根据类型设置颜色
+            switch(type) {
+                case 'success':
+                    messageDiv.classList.add('bg-green-500');
+                    break;
+                case 'error':
+                    messageDiv.classList.add('bg-red-500');
+                    break;
+                case 'warning':
+                    messageDiv.classList.add('bg-yellow-500');
+                    break;
+                default:
+                    messageDiv.classList.add('bg-blue-500');
+            }
+            
+            messageDiv.textContent = message;
+            document.body.appendChild(messageDiv);
+
+            // 显示动画
+            setTimeout(() => {
+                messageDiv.classList.remove('translate-x-full');
+            }, 100);
+
+            // 自动隐藏
+            setTimeout(() => {
+                messageDiv.classList.add('translate-x-full');
+                setTimeout(() => {
+                    document.body.removeChild(messageDiv);
+                }, 300);
+            }, 3000);
+        }
+
+        // 密码显示/隐藏切换
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('password-toggle-icon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+
+        // 注册页面密码显示/隐藏切换
+        function toggleRegisterPassword() {
+            const passwordInput = document.getElementById('reg-password');
+            const toggleIcon = document.getElementById('reg-password-toggle-icon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+
+        // ==================== 增强的表单验证 ====================
+        
+        // 登录表单验证
+        function validateLoginForm(formData) {
+            // 用户名验证
+            if (!formData.username.trim()) {
+                showMessage('请输入用户名、邮箱或手机号', 'error');
+                return false;
+            }
+            
+            // 密码验证
+            if (!formData.password.trim()) {
+                showMessage('请输入密码', 'error');
+                return false;
+            }
+            
+            if (formData.password.length < 6) {
+                showMessage('密码长度至少6位', 'error');
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // 注册表单验证
+        function validateRegisterForm(formData) {
+            // 用户名验证
+            if (!formData.username.trim()) {
+                showMessage('请输入用户名', 'error');
+                return false;
+            }
+            
+            if (formData.username.length < 3) {
+                showMessage('用户名长度至少3位', 'error');
+                return false;
+            }
+            
+            if (!/^[a-zA-Z0-9_\u4e00-\u9fa5]+$/.test(formData.username)) {
+                showMessage('用户名只能包含字母、数字、下划线和中文', 'error');
+                return false;
+            }
+            
+            // 邮箱验证
+            if (!formData.email.trim()) {
+                showMessage('请输入邮箱', 'error');
+                return false;
+            }
+            
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(formData.email)) {
+                showMessage('请输入有效的邮箱地址', 'error');
+                return false;
+            }
+            
+            // 手机号验证
+            if (!formData.phone.trim()) {
+                showMessage('请输入手机号', 'error');
+                return false;
+            }
+            
+            const phoneRegex = /^1[3-9]\d{9}$/;
+            if (!phoneRegex.test(formData.phone)) {
+                showMessage('请输入有效的手机号', 'error');
+                return false;
+            }
+            
+            // 密码验证
+            if (!formData.password.trim()) {
+                showMessage('请输入密码', 'error');
+                return false;
+            }
+            
+            if (formData.password.length < 6) {
+                showMessage('密码长度至少6位', 'error');
+                return false;
+            }
+            
+            if (formData.password.length > 20) {
+                showMessage('密码长度不能超过20位', 'error');
+                return false;
+            }
+            
+            // 密码强度检查
+            const passwordStrength = checkPasswordStrength(formData.password);
+            if (passwordStrength < 2) {
+                showMessage('密码强度太弱，建议包含字母和数字', 'warning');
+            }
+            
+            // 确认密码验证
+            if (formData.password !== formData.confirmPassword) {
+                showMessage('两次输入的密码不一致', 'error');
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // 密码强度检查
+        function checkPasswordStrength(password) {
+            let strength = 0;
+            
+            if (password.length >= 6) strength++;
+            if (/[a-z]/.test(password)) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            
+            return strength;
+        }
+
+        // ==================== TTS 控制功能 ====================
+        
+        // 测试TTS语音（优化版）
+        function testTTS() {
+            const testButton = document.querySelector('button[onclick="testTTS()"]');
+            
+            // 防止重复点击
+            if (testButton.disabled) {
+                return;
+            }
+            
+            const testWord = "Hello, this is a test of the text-to-speech system.";
+            const rate = parseFloat(document.getElementById('tts-rate').value);
+            const pitch = parseFloat(document.getElementById('tts-pitch').value);
+            const volume = parseFloat(document.getElementById('tts-volume').value);
+            
+            // 禁用按钮
+            testButton.disabled = true;
+            testButton.innerHTML = '<i class="fa fa-play mr-2"></i>测试中...';
+            
+            const utterance = ttsService.speakWord(testWord, {
+                rate: rate,
+                pitch: pitch,
+                volume: volume,
+                onEnd: () => {
+                    testButton.disabled = false;
+                    testButton.innerHTML = '<i class="fa fa-play mr-2"></i>测试语音';
+                    showMessage('语音测试完成', 'success');
+                },
+                onError: (error) => {
+                    testButton.disabled = false;
+                    testButton.innerHTML = '<i class="fa fa-play mr-2"></i>测试语音';
+                    showMessage('语音测试失败', 'error');
+                    console.error('TTS测试错误:', error);
+                }
+            });
+            
+            // 如果没有成功创建utterance（被防抖拦截），恢复按钮状态
+            if (!utterance) {
+                testButton.disabled = false;
+                testButton.innerHTML = '<i class="fa fa-play mr-2"></i>测试语音';
+            }
+        }
+
+        // 重置TTS设置
+        function resetTTSSettings() {
+            document.getElementById('tts-rate').value = 0.8;
+            document.getElementById('tts-pitch').value = 1;
+            document.getElementById('tts-volume').value = 1;
+            
+            document.getElementById('rate-value').textContent = '0.8';
+            document.getElementById('pitch-value').textContent = '1.0';
+            document.getElementById('volume-value').textContent = '1.0';
+            
+            showMessage('语音设置已重置', 'info');
+        }
+
+        // 获取当前TTS设置
+        function getCurrentTTSSettings() {
+            return {
+                rate: parseFloat(document.getElementById('tts-rate').value),
+                pitch: parseFloat(document.getElementById('tts-pitch').value),
+                volume: parseFloat(document.getElementById('tts-volume').value)
+            };
+        }
+
+        // 更新TTS设置显示
+        function updateTTSSettingsDisplay() {
+            document.getElementById('rate-value').textContent = document.getElementById('tts-rate').value;
+            document.getElementById('pitch-value').textContent = document.getElementById('tts-pitch').value;
+            document.getElementById('volume-value').textContent = document.getElementById('tts-volume').value;
+        }
+
+        // 保存TTS设置到本地存储
+        function saveTTSSettings() {
+            const settings = getCurrentTTSSettings();
+            localStorage.setItem('ttsSettings', JSON.stringify(settings));
+        }
+
+        // 加载TTS设置
+        function loadTTSSettings() {
+            const savedSettings = localStorage.getItem('ttsSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                document.getElementById('tts-rate').value = settings.rate;
+                document.getElementById('tts-pitch').value = settings.pitch;
+                document.getElementById('tts-volume').value = settings.volume;
+                updateTTSSettingsDisplay();
+            }
+        }
+
+        // 事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查登录状态
+            checkLoginStatus();
+
+            // 加载TTS设置
+            loadTTSSettings();
+
+            // TTS设置滑块事件监听
+            document.getElementById('tts-rate').addEventListener('input', function() {
+                updateTTSSettingsDisplay();
+                saveTTSSettings();
+            });
+
+            document.getElementById('tts-pitch').addEventListener('input', function() {
+                updateTTSSettingsDisplay();
+                saveTTSSettings();
+            });
+
+            document.getElementById('tts-volume').addEventListener('input', function() {
+                updateTTSSettingsDisplay();
+                saveTTSSettings();
+            });
+
+            // 登录表单提交
+            const loginForm = document.getElementById('login-form');
+            if (loginForm) {
+                loginForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const formData = {
+                        username: document.getElementById('username').value,
+                        password: document.getElementById('password').value
+                    };
+
+                    if (validateLoginForm(formData)) {
+                        login(formData.username, formData.password);
+                    }
+                });
+            }
+
+            // 注册表单提交
+            const registerForm = document.getElementById('register-form');
+            if (registerForm) {
+                registerForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const formData = {
+                        username: document.getElementById('reg-username').value,
+                        email: document.getElementById('reg-email').value,
+                        phone: document.getElementById('reg-phone').value,
+                        password: document.getElementById('reg-password').value,
+                        confirmPassword: document.getElementById('confirm-password').value
+                    };
+
+                    if (validateRegisterForm(formData)) {
+                        register(formData);
+                    }
+                });
+            }
+        });
+
+        // ==================== 首页和个人中心更新功能 ====================
+        
+        // 更新首页进度
+        function updateHomeProgress() {
+            const stats = learningStats.totalStats;
+            
+            // 更新本周进度
+            const weeklyProgress = Math.min(100, (stats.exercisesCompleted / 20) * 100);
+            const progressElement = document.querySelector('#home-screen .bg-primary .text-5xl');
+            const progressBar = document.querySelector('#home-screen .bg-primary .bg-white');
+            
+            if (progressElement) {
+                progressElement.textContent = Math.round(weeklyProgress) + '%';
+            }
+            if (progressBar) {
+                progressBar.style.width = weeklyProgress + '%';
+            }
+            
+            // 更新每日目标
+            updateDailyGoals();
+        }
+        
+        // 更新每日目标
+        function updateDailyGoals() {
+            const goals = learningStats.totalStats.dailyGoals;
+            
+            // 听力练习进度
+            const listeningProgress = Math.min(100, (goals.listening / 3) * 100);
+            const listeningBar = document.querySelector('#home-screen .bg-green-500');
+            if (listeningBar) {
+                listeningBar.style.width = listeningProgress + '%';
+                const listeningText = listeningBar.parentElement.previousElementSibling.querySelector('.text-sm');
+                if (listeningText) {
+                    listeningText.textContent = `${goals.listening}/3 分钟`;
+                }
+            }
+            
+            // 阅读练习进度
+            const readingProgress = Math.min(100, (goals.reading / 2) * 100);
+            const readingBar = document.querySelector('#home-screen .bg-blue-500');
+            if (readingBar) {
+                readingBar.style.width = readingProgress + '%';
+                const readingText = readingBar.parentElement.previousElementSibling.querySelector('.text-sm');
+                if (readingText) {
+                    readingText.textContent = `${goals.reading}/2 分钟`;
+                }
+            }
+            
+            // 词汇练习进度
+            const vocabProgress = Math.min(100, (goals.vocabulary / 2) * 100);
+            const vocabBar = document.querySelector('#home-screen .bg-yellow-500');
+            if (vocabBar) {
+                vocabBar.style.width = vocabProgress + '%';
+                const vocabText = vocabBar.parentElement.previousElementSibling.querySelector('.text-sm');
+                if (vocabText) {
+                    vocabText.textContent = `${goals.vocabulary}/2 个单词`;
+                }
+            }
+        }
+        
+        // 更新个人中心统计
+        function updateProfileStats() {
+            const stats = learningStats.totalStats;
+            
+            if (isLoggedIn && currentUser) {
+                // 更新用户统计
+                const wordsElement = document.getElementById('profile-words');
+                const weeksElement = document.getElementById('profile-weeks');
+                const minutesElement = document.getElementById('profile-minutes');
+                
+                if (wordsElement) wordsElement.textContent = stats.wordsLearned;
+                if (weeksElement) weeksElement.textContent = stats.currentStreak;
+                if (minutesElement) minutesElement.textContent = Math.round(stats.totalTimeSpent / stats.currentStreak) || 0;
+                
+                // 更新成就徽章
+                updateAchievementBadges();
+            }
+        }
+        
+        // 更新成就徽章
+        function updateAchievementBadges() {
+            const unlockedAchievements = JSON.parse(localStorage.getItem('unlockedAchievements') || '[]');
+            const badgeElements = document.querySelectorAll('#profile-screen .grid.grid-cols-3 .flex.flex-col');
+            
+            badgeElements.forEach((badge, index) => {
+                const achievementKeys = ['first_word', 'listening_master', 'reading_expert'];
+                const achievementKey = achievementKeys[index];
+                
+                if (achievementKey && unlockedAchievements.includes(achievementKey)) {
+                    const achievement = achievements[achievementKey];
+                    const iconElement = badge.querySelector('.fa-lock');
+                    const textElement = badge.querySelector('.text-gray-400');
+                    
+                    if (iconElement) {
+                        iconElement.className = `fa ${achievement.icon} text-${achievement.color}-500 text-2xl`;
+                    }
+                    if (textElement) {
+                        textElement.className = `text-sm font-medium text-${achievement.color}-600`;
+                        textElement.textContent = achievement.name;
+                    }
+                }
+            });
+        }
+
+        // ==================== 学习记录和复习功能 ====================
+        
+        // 获取学习记录
+        function getStudyHistory() {
+            return learningStats.studyHistory || [];
+        }
+        
+        // 获取错误记录
+        function getErrorHistory() {
+            return learningStats.studyHistory.filter(record => !record.isCorrect);
+        }
+        
+        // 获取需要复习的内容
+        function getReviewItems() {
+            const errorHistory = getErrorHistory();
+            const reviewItems = [];
+            
+            // 按单元和练习类型分组错误记录
+            const groupedErrors = {};
+            errorHistory.forEach(record => {
+                const key = `${record.exerciseType}_${record.unit}`;
+                if (!groupedErrors[key]) {
+                    groupedErrors[key] = [];
+                }
+                groupedErrors[key].push(record);
+            });
+            
+            // 生成复习项目
+            Object.entries(groupedErrors).forEach(([key, records]) => {
+                const [exerciseType, unit] = key.split('_');
+                reviewItems.push({
+                    exerciseType: exerciseType,
+                    unit: unit,
+                    errorCount: records.length,
+                    lastErrorDate: records[records.length - 1].date
+                });
+            });
+            
+            return reviewItems.sort((a, b) => new Date(b.lastErrorDate) - new Date(a.lastErrorDate));
+        }
+        
+        // 显示学习记录
+        function showStudyHistory() {
+            const history = getStudyHistory();
+            const historyModal = createHistoryModal('学习记录', history);
+            document.body.appendChild(historyModal);
+        }
+        
+        // 显示复习建议
+        function showReviewSuggestions() {
+            const reviewItems = getReviewItems();
+            const reviewModal = createReviewModal('复习建议', reviewItems);
+            document.body.appendChild(reviewModal);
+        }
+        
+        // 创建历史记录弹窗
+        function createHistoryModal(title, records) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50';
+            
+            const recordsHtml = records.slice(-10).map(record => `
+                <div class="flex items-center justify-between p-3 border-b border-gray-100">
+                    <div class="flex items-center">
+                        <i class="fa ${getExerciseIcon(record.exerciseType)} text-primary mr-3"></i>
+                        <div>
+                            <p class="font-medium">${getExerciseTypeName(record.exerciseType)} - ${record.unit}</p>
+                            <p class="text-sm text-gray-500">${new Date(record.date).toLocaleString()}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-sm text-gray-500 mr-2">${record.timeSpent}分钟</span>
+                        <i class="fa ${record.isCorrect ? 'fa-check text-green-500' : 'fa-times text-red-500'}"></i>
+                    </div>
+                </div>
+            `).join('');
+            
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl p-6 max-w-md mx-4 max-h-96 overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold">${title}</h3>
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-2">
+                        ${recordsHtml || '<p class="text-gray-500 text-center py-4">暂无学习记录</p>'}
+                    </div>
+                </div>
+            `;
+            
+            return modal;
+        }
+        
+        // 创建复习建议弹窗
+        function createReviewModal(title, reviewItems) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50';
+            
+            const itemsHtml = reviewItems.slice(0, 5).map(item => `
+                <div class="flex items-center justify-between p-3 border-b border-gray-100">
+                    <div class="flex items-center">
+                        <i class="fa ${getExerciseIcon(item.exerciseType)} text-primary mr-3"></i>
+                        <div>
+                            <p class="font-medium">${getExerciseTypeName(item.exerciseType)} - ${item.unit}</p>
+                            <p class="text-sm text-gray-500">错误次数: ${item.errorCount}</p>
+                        </div>
+                    </div>
+                    <button onclick="startReview('${item.exerciseType}', '${item.unit}'); this.parentElement.parentElement.parentElement.remove();" 
+                            class="btn-secondary text-sm px-3 py-1">
+                        复习
+                    </button>
+                </div>
+            `).join('');
+            
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl p-6 max-w-md mx-4 max-h-96 overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold">${title}</h3>
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-2">
+                        ${itemsHtml || '<p class="text-gray-500 text-center py-4">暂无需要复习的内容</p>'}
+                    </div>
+                </div>
+            `;
+            
+            return modal;
+        }
+        
+        // 开始复习
+        function startReview(exerciseType, unit) {
+            // 切换到指定单元
+            selectUnit(exerciseType, unit);
+            
+            // 切换到对应练习页面
+            showScreen(`${exerciseType}-screen`);
+            
+            showMessage(`开始复习${unit}单元${getExerciseTypeName(exerciseType)}`, 'info');
+        }
+        
+        // 获取练习类型图标
+        function getExerciseIcon(exerciseType) {
+            const icons = {
+                listening: 'fa-headphones',
+                reading: 'fa-book',
+                vocabulary: 'fa-list-alt'
+            };
+            return icons[exerciseType] || 'fa-question';
+        }
+        
+        // 获取练习类型名称
+        function getExerciseTypeName(exerciseType) {
+            const names = {
+                listening: '听力练习',
+                reading: '阅读练习',
+                vocabulary: '词汇练习'
+            };
+            return names[exerciseType] || '未知练习';
+        }
+
+        // 初始化学习统计
+        document.addEventListener('DOMContentLoaded', function() {
+            initLearningStats();
+        });
+    </script>
+</body>
+</html>
